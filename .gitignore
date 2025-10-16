@@ -1,0 +1,68 @@
+# ============================================
+# Terraform
+# ============================================
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+
+# Backend configs con credenciales
+*.tfbackend
+!*.tfbackend.example
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration
+.terraformrc
+terraform.rc
+
+# ============================================
+# Análisis y planes
+# ============================================
+plan.json
+plan_output.txt
+creates.json
+deletes.json
+updates.json
+outputs.json
+
+# ============================================
+# Backups
+# ============================================
+backups/
+backup-state-*.json
+
+# ============================================
+# IDEs
+# ============================================
+.vscode/
+.idea/
+*.iml
+
+# ============================================
+# Sistema Operativo
+# ============================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ============================================
+# Secrets
+# ============================================
+secrets/
+*.pem
+*.key
+.env
+.env.local
