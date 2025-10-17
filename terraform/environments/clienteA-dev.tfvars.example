@@ -1,0 +1,112 @@
+# ============================================
+# Test Client - Development Environment
+# ============================================
+
+# Global
+project_name = "testclient"
+environment  = "dev"
+location     = "East US"
+
+# Azure Authentication
+subscription_id = "your-subscription-id-here"
+tenant_id       = "your-tenant-id-here"
+client_id       = "your-client-id-here"
+client_secret   = "your-client-secret-here"
+
+# Tags
+tags = {
+  Project     = "TestClient"
+  Environment = "Development"
+  CostCenter  = "Engineering"
+  Owner       = "DevOps Team"
+}
+
+# Resource Group
+resource_group = {
+  create = true
+  name   = "testclient-dev-rg"
+}
+
+# Application Insights
+application_insights = {
+  create_workspace = true
+  workspace_name   = "law-testclient-dev"
+}
+
+# Storage Accounts (INDEPENDIENTES)
+storage_accounts = {
+  website = {
+    name                     = "testclientdevweb"
+    storage_type             = "static_website"
+    account_tier             = "Standard"
+    account_replication_type = "LRS"
+  }
+  data = {
+    name                     = "testclientdevdata"
+    storage_type             = "general"
+    account_tier             = "Standard"
+    account_replication_type = "LRS"
+  }
+}
+
+# Service Bus
+service_bus = {
+  create         = true
+  namespace_name = "sb-testclient-dev"
+  sku            = "Standard"
+  queues = [
+    {
+      name                                        = "orders-queue"
+      max_size_in_megabytes                      = 1024
+      enable_dead_lettering_on_message_expiration = true
+      max_delivery_count                         = 10
+    }
+  ]
+  topics = [
+    {
+      name                  = "events-topic"
+      max_size_in_megabytes = 1024
+      subscriptions = [
+        {
+          name                                        = "processor-sub"
+          max_delivery_count                          = 10
+          enable_dead_lettering_on_message_expiration = true
+        }
+      ]
+    }
+  ]
+}
+
+# Azure Functions Linux (Flex Consumption)
+functions_linux = [
+  {
+    name    = "fn-testclient-processor-dev"
+    runtime = "dotnet-isolated"
+    version = "8.0"
+    app_settings = [
+      {
+        name  = "ServiceBusConnection__fullyQualifiedNamespace"
+        value = "sb-testclient-dev.servicebus.windows.net"
+      },
+      {
+        name  = "FUNCTIONS_WORKER_RUNTIME"
+        value = "dotnet-isolated"
+      }
+    ]
+    instance_memory_mb     = 2048
+    maximum_instance_count = 100
+  },
+  {
+    name    = "fn-testclient-api-dev"
+    runtime = "dotnet-isolated"
+    version = "8.0"
+    app_settings = [
+      {
+        name  = "Environment"
+        value = "Development"
+      }
+    ]
+    instance_memory_mb     = 2048
+    maximum_instance_count = 50
+  }
+]

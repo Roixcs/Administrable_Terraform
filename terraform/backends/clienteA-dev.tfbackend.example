@@ -1,0 +1,19 @@
+# ============================================
+# Backend Configuration - Test Client - Dev
+# ============================================
+
+resource_group_name  = "tfstate-rg"
+storage_account_name = "tfstatedevsa"
+container_name       = "tfstate-dev"
+key                  = "testclient-dev.tfstate"
+
+# Usar Azure AD Authentication (Managed Identity o Service Principal)
+use_azuread_auth = true
+
+# Si usas Managed Identity en la VM
+# use_msi = true
+
+# IMPORTANTE:
+# - NO incluir sas_token
+# - Credenciales vía variables de entorno:
+#   ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID
