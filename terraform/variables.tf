@@ -176,3 +176,89 @@ variable "application_insights" {
   }
 }
 
+
+# ============================================
+# Cosmos DB
+# ============================================
+
+variable "cosmos_db" {
+  description = "Configuración de Cosmos DB"
+  type = object({
+    create             = bool
+    account_name       = string
+    database_name      = string
+    enable_serverless  = optional(bool, true)
+    consistency_level  = optional(string, "Session")
+    containers = optional(list(object({
+      name           = string
+      partition_keys = list(string)
+      throughput     = optional(number, null)
+      default_ttl    = optional(number, -1)
+    })), [])
+  })
+  default = {
+    create        = false
+    account_name  = ""
+    database_name = ""
+  }
+}
+
+# ============================================
+# Key Vault
+# ============================================
+
+variable "key_vault" {
+  description = "Configuración de Key Vault"
+  type = object({
+    create                     = bool
+    name                       = string
+    sku_name                   = optional(string, "standard")
+    soft_delete_retention_days = optional(number, 7)
+    purge_protection_enabled   = optional(bool, false)
+    enable_rbac_authorization  = optional(bool, true)
+  })
+  default = {
+    create = false
+    name   = ""
+  }
+}
+
+# ============================================
+# API Management
+# ============================================
+
+variable "api_management" {
+  description = "Configuración de API Management"
+  type = object({
+    create          = bool
+    name            = string
+    publisher_name  = string
+    publisher_email = string
+    sku_name        = optional(string, "Consumption_0")
+  })
+  default = {
+    create          = false
+    name            = ""
+    publisher_name  = ""
+    publisher_email = ""
+  }
+}
+
+# ============================================
+# SignalR Service
+# ============================================
+
+variable "signalr" {
+  description = "Configuración de SignalR Service"
+  type = object({
+    create       = bool
+    name         = string
+    sku          = optional(string, "Free_F1")
+    capacity     = optional(number, 1)
+    service_mode = optional(string, "Default")
+  })
+  default = {
+    create = false
+    name   = ""
+  }
+}

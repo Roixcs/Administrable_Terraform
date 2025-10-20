@@ -77,6 +77,26 @@ service_bus = {
   ]
 }
 
+# API Management
+api_management = {
+  create          = true
+  name            = "apim-testclient-dev"
+  publisher_name  = "TestClient"
+  publisher_email = "devops@testclient.com"
+  sku_name        = "Consumption_0"
+}
+
+
+# Key Vault
+key_vault = {
+  create                     = true
+  name                       = "kv-testclient-dev"
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = false
+  enable_rbac_authorization  = true
+}
+
 # Azure Functions Linux (Flex Consumption)
 functions_linux = [
   {
@@ -110,3 +130,36 @@ functions_linux = [
     maximum_instance_count = 50
   }
 ]
+
+
+# Cosmos DB
+cosmos_db = {
+  create            = true
+  account_name      = "cosmos-testclient-dev"
+  database_name     = "testclient-db"
+  enable_serverless = true
+  consistency_level = "Session"
+  containers = [
+    {
+      name           = "orders"
+      partition_keys = ["/customerId"]
+      throughput     = null  # null para serverless
+      default_ttl    = -1    # -1 = sin TTL
+    },
+    {
+      name           = "customers"
+      partition_keys = ["/id"]
+      throughput     = null
+      default_ttl    = 86400  # 24 horas
+    }
+  ]
+}
+
+# SignalR Service
+signalr = {
+  create       = false
+  name         = "signalr-testclient-dev"
+  sku          = "Free_F1"
+  capacity     = 1
+  service_mode = "Default"
+}

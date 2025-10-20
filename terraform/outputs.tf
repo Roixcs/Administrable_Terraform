@@ -48,3 +48,46 @@ output "workspace_id" {
   description = "ID del Log Analytics Workspace compartido"
   value       = var.application_insights.create_workspace ? azurerm_log_analytics_workspace.shared[0].id : null
 }
+
+output "cosmos_db" {
+  description = "Información de Cosmos DB"
+  value = var.cosmos_db.create ? {
+    account_id    = module.cosmos_db[0].account_id
+    account_name  = module.cosmos_db[0].account_name
+    endpoint      = module.cosmos_db[0].endpoint
+    database_name = module.cosmos_db[0].database_name
+    containers    = module.cosmos_db[0].containers
+  } : null
+  sensitive = true
+}
+
+
+output "key_vault" {
+  description = "Información del Key Vault"
+  value = var.key_vault.create ? {
+    id        = module.key_vault[0].id
+    name      = module.key_vault[0].name
+    vault_uri = module.key_vault[0].vault_uri
+  } : null
+}
+
+
+output "api_management" {
+  description = "Información de API Management"
+  value = var.api_management.create ? {
+    id                   = module.api_management[0].id
+    name                 = module.api_management[0].name
+    gateway_url          = module.api_management[0].gateway_url
+    developer_portal_url = module.api_management[0].developer_portal_url
+  } : null
+}
+
+output "signalr" {
+  description = "Información de SignalR Service"
+  value = var.signalr.create ? {
+    id       = module.signalr[0].id
+    name     = module.signalr[0].name
+    hostname = module.signalr[0].hostname
+  } : null
+}
+

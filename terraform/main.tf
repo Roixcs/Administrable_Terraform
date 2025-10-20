@@ -27,6 +27,15 @@ locals {
 }
 
 # ============================================
+# Storage Accounts (INDEPENDIENTES)
+# ============================================
+# Solo para:
+# 1. Static Website (Front Door)
+# 2. StorageV2 general (blobs, tables)
+# 
+# Los Storage de Functions se crean DENTRO del módulo de Functions
+# ============================================
+# ============================================
 # Resource Group
 # ============================================
 
@@ -39,15 +48,25 @@ module "resource_group" {
   tags     = local.common_tags
 }
 
+# ============================================
+# Application Insights Workspace
+# ============================================
+
+resource "azurerm_log_analytics_workspace" "shared" {
+  count               = var.application_insights.create_workspace ? 1 : 0
+  name                = coalesce(var.application_insights.workspace_name, "${local.name_prefix}-law")
+  location            = var.location
+  resource_group_name = local.rg_name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+  
+  tags = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
 
 # ============================================
 # Storage Accounts (INDEPENDIENTES)
-# ============================================
-# Solo para:
-# 1. Static Website (Front Door)
-# 2. StorageV2 general (blobs, tables)
-# 
-# Los Storage de Functions se crean DENTRO del módulo de Functions
 # ============================================
 
 module "storage_account" {
@@ -64,7 +83,6 @@ module "storage_account" {
   
   depends_on = [module.resource_group]
 }
-
 
 # ============================================
 # Service Bus
@@ -106,4 +124,81 @@ module "function_linux" {
   ]
 }
 
+# ============================================
+# Cosmos DB
+# ============================================
 
+module "cosmos_db" {
+  count  = var.cosmos_db.create ? 1 : 0
+  source = "./modules/cosmos_db"
+  
+  account_name        = var.cosmos_db.account_name
+  resource_group_name = local.rg_name
+  location            = var.location
+  database_name       = var.cosmos_db.database_name
+  enable_serverless   = var.cosmos_db.enable_serverless
+  consistency_level   = var.cosmos_db.consistency_level
+  containers          = var.cosmos_db.containers
+  tags                = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+# ============================================
+# Key Vault
+# ============================================
+
+module "key_vault" {
+  count  = var.key_vault.create ? 1 : 0
+  source = "./modules/key_vault"
+  
+  name                       = var.key_vault.name
+  resource_group_name        = local.rg_name
+  location                   = var.location
+  tenant_id                  = var.tenant_id
+  sku_name                   = var.key_vault.sku_name
+  soft_delete_retention_days = var.key_vault.soft_delete_retention_days
+  purge_protection_enabled   = var.key_vault.purge_protection_enabled
+  enable_rbac_authorization  = var.key_vault.enable_rbac_authorization
+  tags                       = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+# ============================================
+# API Management
+# ============================================
+
+module "api_management" {
+  count  = var.api_management.create ? 1 : 0
+  source = "./modules/api_management"
+  
+  name                = var.api_management.name
+  resource_group_name = local.rg_name
+  location            = var.location
+  publisher_name      = var.api_management.publisher_name
+  publisher_email     = var.api_management.publisher_email
+  sku_name            = var.api_management.sku_name
+  tags                = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+# ============================================
+# SignalR Service
+# ============================================
+
+module "signalr" {
+  count  = var.signalr.create ? 1 : 0
+  source = "./modules/signalr"
+  
+  name                = var.signalr.name
+  resource_group_name = local.rg_name
+  location            = var.location
+  sku                 = var.signalr.sku
+  capacity            = var.signalr.capacity
+  service_mode        = var.signalr.service_mode
+  tags                = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
