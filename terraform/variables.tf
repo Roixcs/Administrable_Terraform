@@ -262,3 +262,195 @@ variable "signalr" {
     name   = ""
   }
 }
+
+# ============================================
+# VNET VARIABLES
+# ============================================
+
+variable "vnet" {
+  description = "Configuración de Virtual Network"
+  type = object({
+    create        = bool
+    name          = string
+    address_space = list(string)
+    dns_servers   = optional(list(string), [])
+    subnets = optional(map(object({
+      name             = string
+      address_prefixes = list(string)
+      service_endpoints = optional(list(string), [])
+      delegation = optional(object({
+        name = string
+        service_delegation = object({
+          name    = string
+          actions = optional(list(string), [])
+        })
+      }))
+      private_endpoint_network_policies_enabled     = optional(bool, true)
+      private_link_service_network_policies_enabled = optional(bool, true)
+    })), {})
+  })
+  default = {
+    create        = false
+    name          = ""
+    address_space = []
+    dns_servers   = []
+    subnets       = {}
+  }
+}
+
+
+# ============================================
+# LOG ANALYTICS WORKSPACE VARIABLES
+# ============================================
+
+variable "log_analytics" {
+  description = "Configuración de Log Analytics Workspace"
+  type = object({
+    create                             = bool
+    name                               = string
+    sku                                = optional(string, "PerGB2018")
+    retention_in_days                  = optional(number, 30)
+    daily_quota_gb                     = optional(number, -1)
+    internet_ingestion_enabled         = optional(bool, true)
+    internet_query_enabled             = optional(bool, true)
+    reservation_capacity_in_gb_per_day = optional(number, null)
+  })
+  default = {
+    create = false
+    name   = ""
+  }
+}
+
+
+# ============================================
+# FRONT DOOR VARIABLES
+# ============================================
+
+variable "front_door" {
+  description = "Configuración de Azure Front Door"
+  type = object({
+    create                   = bool
+    name                     = string
+    sku_name                 = optional(string, "Standard_AzureFrontDoor")
+    response_timeout_seconds = optional(number, 120)
+    
+    endpoints = optional(map(object({
+      name    = string
+      enabled = optional(bool, true)
+    })), {})
+    
+    origin_groups = optional(map(object({
+      name                     = string
+      session_affinity_enabled = optional(bool, false)
+      
+      load_balancing = optional(object({
+        additional_latency_in_milliseconds = optional(number, 50)
+        sample_size                        = optional(number, 4)
+        successful_samples_required        = optional(number, 3)
+      }), {})
+      
+      health_probe = optional(object({
+        interval_in_seconds = number
+        path                = optional(string, "/")
+        protocol            = string
+        request_type        = optional(string, "HEAD")
+      }))
+    })), {})
+    
+    origins = optional(map(object({
+      name                           = string
+      origin_group_key              = string
+      host_name                      = string
+      http_port                      = optional(number, 80)
+      https_port                     = optional(number, 443)
+      certificate_name_check_enabled = optional(bool, true)
+      enabled                        = optional(bool, true)
+      priority                       = optional(number, 1)
+      weight                         = optional(number, 1000)
+      
+      private_link = optional(object({
+        request_message        = optional(string)
+        target_type           = optional(string)
+        location              = string
+        private_link_target_id = string
+      }))
+    })), {})
+    
+    routes = optional(map(object({
+      name                   = string
+      endpoint_key           = string
+      origin_group_key       = string
+      origin_keys            = list(string)
+      patterns_to_match      = list(string)
+      supported_protocols    = list(string)
+      forwarding_protocol    = optional(string, "HttpsOnly")
+      https_redirect_enabled = optional(bool, true)
+      enabled                = optional(bool, true)
+      link_to_default_domain = optional(bool, true)
+      
+      cache = optional(object({
+        query_string_caching_behavior = optional(string, "IgnoreQueryString")
+        query_strings                 = optional(list(string), [])
+        compression_enabled           = optional(bool, true)
+        content_types_to_compress     = optional(list(string), [])
+      }))
+      
+      custom_domains = optional(list(string), [])
+    })), {})
+    
+    custom_domains = optional(map(object({
+      name      = string
+      host_name = string
+      
+      tls = optional(object({
+        certificate_type    = optional(string, "ManagedCertificate")
+        minimum_tls_version = optional(string, "TLS12")
+      }), {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12"
+      })
+    })), {})
+  })
+  
+  default = {
+    create   = false
+    name     = ""
+    sku_name = "Standard_AzureFrontDoor"
+  }
+}
+
+
+# ============================================
+# AZURE FUNCTIONS (WINDOWS) VARIABLES
+# ============================================
+
+variable "functions_windows" {
+  description = "Configuración de Azure Functions Windows"
+  type = list(object({
+    name        = string
+    plan_type   = string  # "consumption" o "basic"
+    create      = bool
+    plan_name   = optional(string)
+    
+    app_settings = optional(list(object({
+      name         = string
+      value        = string
+      slot_setting = optional(bool, false)
+    })), [])
+    
+    always_on                     = optional(bool, false)
+    dotnet_version                = optional(string, "v8.0")
+    use_dotnet_isolated_runtime   = optional(bool, true)
+    
+    vnet_integration = optional(object({
+      subnet_id = string
+    }))
+    
+    identity_type                  = optional(string, "SystemAssigned")
+    identity_ids                   = optional(list(string), [])
+    application_insights_enabled   = optional(bool, true)
+    storage_account_name           = optional(string)
+    storage_uses_managed_identity  = optional(bool, false)
+  }))
+  default = []
+}

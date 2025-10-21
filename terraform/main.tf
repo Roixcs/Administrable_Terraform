@@ -202,3 +202,83 @@ module "signalr" {
   
   depends_on = [module.resource_group]
 }
+
+# ============================================
+# VNET
+# ============================================
+
+module "vnet" {
+  source              = "./modules/vnet"
+  create_vnet         = var.vnet.create
+  vnet_name           = var.vnet.name
+  address_space       = var.vnet.address_space
+  dns_servers         = var.vnet.dns_servers
+  subnets             = var.vnet.subnets
+  resource_group_name = local.rg_name
+  location            = var.location
+  tags                = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+
+# ============================================
+# LOG ANALYTICS WORKSPACE MODULE
+# ============================================
+
+module "log_analytics" {
+  source                             = "./modules/log_analytics_workspace"
+  create_log_analytics               = var.log_analytics.create
+  name                               = var.log_analytics.name
+  resource_group_name                = local.rg_name
+  location                           = var.location
+  sku                                = var.log_analytics.sku
+  retention_in_days                  = var.log_analytics.retention_in_days
+  daily_quota_gb                     = var.log_analytics.daily_quota_gb
+  internet_ingestion_enabled         = var.log_analytics.internet_ingestion_enabled
+  internet_query_enabled             = var.log_analytics.internet_query_enabled
+  reservation_capacity_in_gb_per_day = var.log_analytics.reservation_capacity_in_gb_per_day
+  tags                               = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+
+# ============================================
+# FRONT DOOR MODULE
+# ============================================
+
+module "front_door" {
+  source                   = "./modules/front_door"
+  create_front_door        = var.front_door.create
+  name                     = var.front_door.name
+  resource_group_name      = local.rg_name
+  sku_name                 = var.front_door.sku_name
+  response_timeout_seconds = var.front_door.response_timeout_seconds
+  endpoints                = var.front_door.endpoints
+  origin_groups            = var.front_door.origin_groups
+  origins                  = var.front_door.origins
+  routes                   = var.front_door.routes
+  custom_domains           = var.front_door.custom_domains
+  tags                     = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+# ============================================
+# AZURE FUNCTIONS (WINDOWS) MODULE
+# ============================================
+
+module "azure_functions_windows" {
+  source                      = "./modules/function_app/windows"
+  functions                   = var.functions_windows
+  location                    = var.location
+  resource_group_name         = local.rg_name
+  log_analytics_workspace_id  = module.log_analytics.id
+  tags                        = local.common_tags
+  
+  depends_on = [
+    module.resource_group,
+    module.log_analytics
+  ]
+}

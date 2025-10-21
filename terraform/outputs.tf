@@ -91,3 +91,88 @@ output "signalr" {
   } : null
 }
 
+# ============================================
+# VNET OUTPUTS
+# ============================================
+
+output "vnet_id" {
+  description = "ID de la Virtual Network"
+  value       = module.vnet.vnet_id
+}
+
+output "vnet_name" {
+  description = "Nombre de la Virtual Network"
+  value       = module.vnet.vnet_name
+}
+
+output "vnet_address_space" {
+  description = "Espacio de direcciones de la VNet"
+  value       = module.vnet.vnet_address_space
+}
+
+output "subnet_ids" {
+  description = "IDs de las subnets"
+  value       = module.vnet.subnet_ids
+}
+
+output "subnet_names" {
+  description = "Nombres de las subnets"
+  value       = module.vnet.subnet_names
+}
+
+output "network_configuration" {
+  description = "Configuración completa de la red"
+  value       = module.vnet.network_configuration
+}
+
+
+# ============================================
+# LOG ANALYTICS WORKSPACE OUTPUTS
+# ============================================
+
+output "log_analytics_id" {
+  description = "ID del Log Analytics Workspace"
+  value       = module.log_analytics.id
+}
+
+output "log_analytics_name" {
+  description = "Nombre del Log Analytics Workspace"
+  value       = module.log_analytics.name
+}
+
+output "log_analytics_workspace_id" {
+  description = "Workspace ID (GUID) del Log Analytics"
+  value       = module.log_analytics.workspace_id
+}
+
+output "log_analytics_primary_shared_key" {
+  description = "Primary Shared Key del Log Analytics"
+  value       = module.log_analytics.primary_shared_key
+  sensitive   = true
+}
+
+
+
+# ============================================
+# AZURE FUNCTIONS (WINDOWS) OUTPUTS
+# ============================================
+
+output "function_app_windows_ids" {
+  description = "IDs de las Azure Functions Windows"
+  value       = module.azure_functions_windows.function_app_ids
+}
+
+output "function_app_windows_names" {
+  description = "Nombres de las Azure Functions Windows"
+  value       = module.azure_functions_windows.function_app_names
+}
+
+output "function_app_windows_hostnames" {
+  description = "Hostnames de las Azure Functions Windows"
+  value       = module.azure_functions_windows.function_app_default_hostnames
+}
+
+output "function_app_windows_identities" {
+  description = "Identities de las Azure Functions Windows"
+  value       = module.azure_functions_windows.function_app_identities
+}

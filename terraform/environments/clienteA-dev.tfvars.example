@@ -163,3 +163,198 @@ signalr = {
   capacity     = 1
   service_mode = "Default"
 }
+
+
+# ============================================
+# VNET CONFIGURATION
+# ============================================
+
+vnet = {
+  create        = true
+  name          = "vnet-myproject-test-dev"
+  address_space = ["10.180.0.0/16"]
+  dns_servers   = [] # Opcional: ["10.180.0.4", "10.180.0.5"]
+  
+  subnets = {
+  # Subnet básica sin delegación
+  subnet_general = {
+    name             = "subnet-general"
+    address_prefixes = ["10.180.1.0/24"]
+    service_endpoints = []
+  }
+  
+  # Subnet para Azure Functions con delegación
+  subnet_functions = {
+    name             = "subnet-functions"
+    address_prefixes = ["10.180.2.0/24"]
+    service_endpoints = [
+      "Microsoft.Storage",
+      "Microsoft.KeyVault",
+      "Microsoft.ServiceBus"
+    ]
+    delegation = {
+      name = "delegation-functions"
+      service_delegation = {
+        name = "Microsoft.Web/serverFarms"
+        actions = [
+          "Microsoft.Network/virtualNetworks/subnets/action"
+        ]
+      }
+    }
+    private_endpoint_network_policies_enabled     = false
+    private_link_service_network_policies_enabled = false
+  }
+  
+  # Subnet para App Services
+  subnet_apps = {
+    name             = "subnet-apps"
+    address_prefixes = ["10.180.3.0/24"]
+    service_endpoints = [
+      "Microsoft.Storage",
+      "Microsoft.Sql",
+      "Microsoft.Web"
+    ]
+    private_endpoint_network_policies_enabled     = true
+    private_link_service_network_policies_enabled = true
+  }
+  
+  # Subnet para Private Endpoints
+  subnet_private_endpoints = {
+    name             = "subnet-private-endpoints"
+    address_prefixes = ["10.180.4.0/24"]
+    service_endpoints = []
+    private_endpoint_network_policies_enabled     = false
+    private_link_service_network_policies_enabled = false
+  }
+  
+  # Subnet para bases de datos
+  subnet_data = {
+    name             = "subnet-data"
+    address_prefixes = ["10.180.5.0/24"]
+    service_endpoints = [
+      "Microsoft.Sql",
+      "Microsoft.Storage",
+      "Microsoft.AzureCosmosDB"
+    ]
+  }
+  
+  # Subnet para Application Gateway (si aplica)
+  subnet_appgw = {
+    name             = "subnet-appgw"
+    address_prefixes = ["10.180.10.0/24"]
+    service_endpoints = []
+  }
+}
+
+
+# ============================================
+# LOG ANALYTICS WORKSPACE CONFIGURATION
+# ============================================
+
+log_analytics = {
+  create                     = true
+  name                       = "log-myproject-test-dev"
+  sku                        = "PerGB2018"  # Free, PerNode, Premium, Standard, Standalone, Unlimited, CapacityReservation, PerGB2018
+  retention_in_days          = 30           # 30-730 días
+  daily_quota_gb             = -1           # -1 para ilimitado
+  internet_ingestion_enabled = true
+  internet_query_enabled     = true
+  # reservation_capacity_in_gb_per_day = 100  # Solo para CapacityReservation SKU
+}
+
+
+# ============================================
+# AZURE FUNCTIONS (WINDOWS) CONFIGURATION
+# ============================================
+
+functions_windows = [
+  # Function App - Consumption Plan
+  {
+    name                         = "fn-api-myproject-test-dev"
+    plan_type                    = "consumption"
+    create                       = true
+    always_on                    = false  # No disponible en Consumption
+    dotnet_version               = "v8.0"
+    use_dotnet_isolated_runtime  = true
+    application_insights_enabled = true
+    
+    app_settings = [
+      {
+        name         = "ENVIRONMENT"
+        value        = "test-dev"
+        slot_setting = false
+      },
+      {
+        name         = "ServiceBusConnectionString"
+        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/ServiceBusCS/)"
+        slot_setting = false
+      },
+      {
+        name         = "StorageAccountConnectionString"
+        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/StorageCS/)"
+        slot_setting = false
+      }
+    ]
+    
+    identity_type = "SystemAssigned"
+  },
+  
+  # Function App - Basic Plan (B1) con VNet Integration
+  {
+    name                         = "fn-worker-myproject-test-dev"
+    plan_type                    = "basic"
+    create                       = true
+    plan_name                    = "asp-worker-test-dev"  # Nombre personalizado del plan
+    always_on                    = true  # Disponible en Basic
+    dotnet_version               = "v8.0"
+    use_dotnet_isolated_runtime  = true
+    application_insights_enabled = true
+    
+    # VNet Integration (opcional)
+    # vnet_integration = {
+    #   subnet_id = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-functions"
+    # }
+    
+    app_settings = [
+      {
+        name         = "ENVIRONMENT"
+        value        = "test-dev"
+        slot_setting = false
+      },
+      {
+        name         = "CosmosDbConnectionString"
+        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/CosmosDbCS/)"
+        slot_setting = false
+      },
+      {
+        name         = "WEBSITE_TIME_ZONE"
+        value        = "Eastern Standard Time"
+        slot_setting = false
+      }
+    ]
+    
+    identity_type = "SystemAssigned"
+  },
+  
+  # Function App - Consumption con Storage usando Managed Identity
+  {
+    name                          = "fn-events-myproject-test-dev"
+    plan_type                     = "consumption"
+    create                        = false  # Deshabilitado
+    always_on                     = false
+    dotnet_version                = "v8.0"
+    use_dotnet_isolated_runtime   = true
+    application_insights_enabled  = true
+    storage_uses_managed_identity = true
+    
+    app_settings = [
+      {
+        name         = "EventHubConnectionString"
+        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/EventHubCS/)"
+        slot_setting = false
+      }
+    ]
+    
+    identity_type = "SystemAssigned"
+  }
+]
