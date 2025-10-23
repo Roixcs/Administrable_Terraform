@@ -8,8 +8,8 @@ variable "functions" {
     
     # Application Settings
     app_settings = optional(list(object({
-      name        = string
-      value       = string
+      name         = string
+      value        = string
       slot_setting = optional(bool, false)
     })), [])
     
@@ -24,7 +24,7 @@ variable "functions" {
     }))
     
     # Identity
-    identity_type = optional(string, "SystemAssigned")  # SystemAssigned, UserAssigned
+    identity_type = optional(string, "SystemAssigned")
     identity_ids  = optional(list(string), [])
     
     # Application Insights

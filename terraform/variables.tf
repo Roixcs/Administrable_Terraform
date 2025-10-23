@@ -140,26 +140,6 @@ variable "service_bus" {
   }
 }
 
-# ============================================
-# Azure Functions Linux
-# ============================================
-
-variable "functions_linux" {
-  description = "Azure Functions Linux (Flex Consumption)"
-  type = list(object({
-    name    = string
-    runtime = optional(string, "dotnet-isolated")
-    version = optional(string, "8.0")
-    app_settings = optional(list(object({
-      name         = string
-      value        = string
-      slot_setting = optional(bool, false)
-    })), [])
-    instance_memory_mb     = optional(number, 2048)
-    maximum_instance_count = optional(number, 100)
-  }))
-  default = []
-}
 
 # ============================================
 # Application Insights Workspace
@@ -264,7 +244,7 @@ variable "signalr" {
 }
 
 # ============================================
-# VNET VARIABLES
+# VNET
 # ============================================
 
 variable "vnet" {
@@ -272,7 +252,7 @@ variable "vnet" {
   type = object({
     create        = bool
     name          = string
-    address_space = list(string)
+    address_space = optional(list(string), [])  # ✅ AHORA ES OPCIONAL
     dns_servers   = optional(list(string), [])
     subnets = optional(map(object({
       name             = string
@@ -419,9 +399,29 @@ variable "front_door" {
   }
 }
 
+# ============================================
+# AZURE FUNCTIONS LINUX VARIABLES
+# ============================================
+
+variable "functions_linux" {
+  description = "Configuración de Azure Functions Linux (Flex Consumption)"
+  type = list(object({
+    name        = string
+    plan_type   = string  # "FlexConsumption"
+    create      = bool
+    plan_name   = optional(string)
+    
+    app_settings = optional(list(object({
+      name        = string
+      value       = string
+      slotSetting = bool
+    })), [])
+  }))
+  default = []
+}
 
 # ============================================
-# AZURE FUNCTIONS (WINDOWS) VARIABLES
+# AZURE FUNCTIONS WINDOWS VARIABLES
 # ============================================
 
 variable "functions_windows" {
@@ -432,25 +432,45 @@ variable "functions_windows" {
     create      = bool
     plan_name   = optional(string)
     
+    # Application Settings
     app_settings = optional(list(object({
       name         = string
       value        = string
       slot_setting = optional(bool, false)
     })), [])
     
+    # Site Config
     always_on                     = optional(bool, false)
     dotnet_version                = optional(string, "v8.0")
     use_dotnet_isolated_runtime   = optional(bool, true)
     
+    # VNet Integration
     vnet_integration = optional(object({
       subnet_id = string
     }))
     
-    identity_type                  = optional(string, "SystemAssigned")
-    identity_ids                   = optional(list(string), [])
-    application_insights_enabled   = optional(bool, true)
-    storage_account_name           = optional(string)
-    storage_uses_managed_identity  = optional(bool, false)
+    # Identity
+    identity_type = optional(string, "SystemAssigned")
+    identity_ids  = optional(list(string), [])
+    
+    # Application Insights
+    application_insights_enabled = optional(bool, true)
+    
+    # Storage Account
+    storage_account_name          = optional(string)
+    storage_uses_managed_identity = optional(bool, false)
   }))
   default = []
 }
+
+# ============================================
+# LOG ANALYTICS - REUSE WORKSPACE
+# ============================================
+
+variable "reuse_existing_log_analytics_workspace" {
+  description = "Si true, intenta reutilizar el workspace default de Azure para Functions Linux"
+  type        = bool
+  default     = true
+}
+
+

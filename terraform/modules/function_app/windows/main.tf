@@ -1,3 +1,8 @@
+# ============================================
+# AZURE FUNCTIONS WINDOWS
+# Consumption (Y1) + Basic (B1)
+# ============================================
+
 # Random strings para nombres únicos
 resource "random_string" "storage_account_suffix" {
   for_each = { for func in var.functions : func.name => func if func.create }
@@ -34,12 +39,21 @@ resource "azurerm_storage_account" "storage_account" {
   tags = var.tags
 }
 
+# Storage Containers para Deployment
+resource "azurerm_storage_container" "deployment_container" {
+  for_each = { for func in var.functions : func.name => func if func.create && func.storage_account_name == null }
+
+  name                  = "function-releases"
+  storage_account_id    = azurerm_storage_account.storage_account[each.key].id  # ✅ CORREGIDO: Usar ID en lugar de name
+  container_access_type = "private"
+}
+
 # App Service Plans - Basic (B1)
 resource "azurerm_service_plan" "basic_plan" {
   for_each = { for func in var.functions : func.name => func if func.plan_type == "basic" && func.create }
 
-  name                = coalesce(
-    each.value.plan_name, 
+  name = coalesce(
+    each.value.plan_name,
     "asp-${replace(substr(each.value.name, 0, 24), "-", "")}-${random_string.plan_suffix_basic[each.key].result}"
   )
   location            = var.location
@@ -100,12 +114,16 @@ resource "azurerm_monitor_smart_detector_alert_rule" "failure_anomalies" {
 resource "azurerm_windows_function_app" "function_app" {
   for_each = { for func in var.functions : func.name => func if func.create }
 
-  name                       = each.value.name
-  location                   = var.location
-  resource_group_name        = var.resource_group_name
-  service_plan_id            = each.value.plan_type == "basic" ? azurerm_service_plan.basic_plan[each.key].id : azurerm_service_plan.consumption_plan[each.key].id
-  storage_account_name       = each.value.storage_account_name != null ? each.value.storage_account_name : azurerm_storage_account.storage_account[each.key].name
-  storage_account_access_key = each.value.storage_account_name != null ? null : azurerm_storage_account.storage_account[each.key].primary_access_key
+  name                = each.value.name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  service_plan_id     = each.value.plan_type == "basic" ? azurerm_service_plan.basic_plan[each.key].id : azurerm_service_plan.consumption_plan[each.key].id
+  
+  # Storage Account
+  storage_account_name = each.value.storage_account_name != null ? each.value.storage_account_name : azurerm_storage_account.storage_account[each.key].name
+  
+  # Autenticación: Managed Identity o Access Key
+  storage_account_access_key    = each.value.storage_uses_managed_identity ? null : (each.value.storage_account_name != null ? null : azurerm_storage_account.storage_account[each.key].primary_access_key)
   storage_uses_managed_identity = each.value.storage_uses_managed_identity
   
   site_config {
@@ -129,20 +147,39 @@ resource "azurerm_windows_function_app" "function_app" {
   }
   
   # Identity
-  dynamic "identity" {
-    for_each = each.value.identity_type != null ? [1] : []
-    content {
-      type         = each.value.identity_type
-      identity_ids = each.value.identity_type == "UserAssigned" ? each.value.identity_ids : null
-    }
+  identity {
+    type         = each.value.identity_type
+    identity_ids = each.value.identity_type == "UserAssigned" ? each.value.identity_ids : null
   }
   
-  # App Settings
+  # App Settings COMPLETOS
   app_settings = merge(
+    # Application Insights
     each.value.application_insights_enabled ? {
       "APPINSIGHTS_INSTRUMENTATIONKEY"        = azurerm_application_insights.app_insights[each.key].instrumentation_key
       "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.app_insights[each.key].connection_string
     } : {},
+    
+    # Storage Connection Strings y Deployment Settings
+    each.value.storage_account_name == null ? {
+      # Storage Account
+      "AzureWebJobsStorage__accountName"              = azurerm_storage_account.storage_account[each.key].name
+      "AzureWebJobsStorage__blobServiceUri"           = azurerm_storage_account.storage_account[each.key].primary_blob_endpoint
+      "AzureWebJobsStorage__queueServiceUri"          = azurerm_storage_account.storage_account[each.key].primary_queue_endpoint
+      "AzureWebJobsStorage__tableServiceUri"          = azurerm_storage_account.storage_account[each.key].primary_table_endpoint
+      
+      # Website Content
+      "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING"      = azurerm_storage_account.storage_account[each.key].primary_connection_string
+      "WEBSITE_CONTENTSHARE"                          = lower(each.value.name)
+      
+      # Deployment Storage Settings
+      "DeploymentStorageConnectionString"             = azurerm_storage_account.storage_account[each.key].primary_connection_string
+      "DeploymentStorageAccountName"                  = azurerm_storage_account.storage_account[each.key].name
+      "DeploymentContainer"                           = azurerm_storage_container.deployment_container[each.key].name
+      "DeploymentStorageBlobEndpoint"                 = azurerm_storage_account.storage_account[each.key].primary_blob_endpoint
+    } : {},
+    
+    # Settings personalizados del usuario
     {
       for setting in each.value.app_settings : setting.name => setting.value
     }
@@ -156,6 +193,14 @@ resource "azurerm_windows_function_app" "function_app" {
       app_settings
     ]
   }
+  
+  depends_on = [
+    azurerm_service_plan.basic_plan,
+    azurerm_service_plan.consumption_plan,
+    azurerm_storage_account.storage_account,
+    azurerm_storage_container.deployment_container,
+    azurerm_application_insights.app_insights
+  ]
 }
 
 # VNet Integration
@@ -164,4 +209,35 @@ resource "azurerm_app_service_virtual_network_swift_connection" "vnet_integratio
 
   app_service_id = azurerm_windows_function_app.function_app[each.key].id
   subnet_id      = each.value.vnet_integration.subnet_id
+}
+
+# Role Assignments para Managed Identity (opcional)
+resource "azurerm_role_assignment" "function_storage_blob_contributor" {
+  for_each = { for func in var.functions : func.name => func if func.create && func.storage_uses_managed_identity && func.storage_account_name == null }
+
+  scope                = azurerm_storage_account.storage_account[each.key].id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_windows_function_app.function_app[each.key].identity[0].principal_id
+  
+  depends_on = [azurerm_windows_function_app.function_app]
+}
+
+resource "azurerm_role_assignment" "function_storage_queue_contributor" {
+  for_each = { for func in var.functions : func.name => func if func.create && func.storage_uses_managed_identity && func.storage_account_name == null }
+
+  scope                = azurerm_storage_account.storage_account[each.key].id
+  role_definition_name = "Storage Queue Data Contributor"
+  principal_id         = azurerm_windows_function_app.function_app[each.key].identity[0].principal_id
+  
+  depends_on = [azurerm_windows_function_app.function_app]
+}
+
+resource "azurerm_role_assignment" "function_storage_table_contributor" {
+  for_each = { for func in var.functions : func.name => func if func.create && func.storage_uses_managed_identity && func.storage_account_name == null }
+
+  scope                = azurerm_storage_account.storage_account[each.key].id
+  role_definition_name = "Storage Table Data Contributor"
+  principal_id         = azurerm_windows_function_app.function_app[each.key].identity[0].principal_id
+  
+  depends_on = [azurerm_windows_function_app.function_app]
 }
