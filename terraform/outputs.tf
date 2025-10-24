@@ -206,19 +206,19 @@ output "functions_linux_dispatcher" {
   } : null
 }
 
-# ============================================
-# Function Linux - SINGLE
-# ============================================
+# # ============================================
+# # Function Linux - SINGLE
+# # ============================================
 
-output "function_linux_critical" {
-  description = "Información de Function Linux crítica (Single)"
-  value = var.function_linux_critical.create ? {
-    id               = module.function_linux_critical.id
-    name             = module.function_linux_critical.name
-    default_hostname = module.function_linux_critical.default_hostname
-    principal_id     = module.function_linux_critical.principal_id
-  } : null
-}
+# output "function_linux_critical" {
+#   description = "Información de Function Linux crítica (Single)"
+#   value = var.function_linux_critical.create ? {
+#     id               = module.function_linux_critical.id
+#     name             = module.function_linux_critical.name
+#     default_hostname = module.function_linux_critical.default_hostname
+#     principal_id     = module.function_linux_critical.principal_id
+#   } : null
+# }
 
 # ============================================
 # Functions Windows
@@ -361,4 +361,30 @@ output "subnet_names" {
 output "network_configuration" {
   description = "Configuración completa de la red"
   value       = var.vnet.create_vnet || length(var.vnet.subnets) > 0 ? module.vnet.network_configuration : null
+}
+
+
+
+# ============================================
+# FRONT DOOR OUTPUTS
+# ============================================
+
+output "front_door_profile_id" {
+  description = "ID del Front Door Profile"
+  value       = module.front_door.profile_id
+}
+
+output "front_door_profile_name" {
+  description = "Nombre del Front Door Profile"
+  value       = module.front_door.profile_name
+}
+
+output "front_door_endpoint_hostnames" {
+  description = "Hostnames de los endpoints de Front Door"
+  value       = module.front_door.endpoint_host_names
+}
+
+output "front_door_configuration" {
+  description = "Configuración completa del Front Door"
+  value       = module.front_door.front_door_configuration
 }

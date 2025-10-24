@@ -306,98 +306,98 @@ variable "log_analytics" {
 # FRONT DOOR VARIABLES
 # ============================================
 
-variable "front_door" {
-  description = "Configuración de Azure Front Door"
-  type = object({
-    create                   = bool
-    name                     = string
-    sku_name                 = optional(string, "Standard_AzureFrontDoor")
-    response_timeout_seconds = optional(number, 120)
+# variable "front_door" {
+#   description = "Configuración de Azure Front Door"
+#   type = object({
+#     create                   = bool
+#     name                     = string
+#     sku_name                 = optional(string, "Standard_AzureFrontDoor")
+#     response_timeout_seconds = optional(number, 120)
     
-    endpoints = optional(map(object({
-      name    = string
-      enabled = optional(bool, true)
-    })), {})
+#     endpoints = optional(map(object({
+#       name    = string
+#       enabled = optional(bool, true)
+#     })), {})
     
-    origin_groups = optional(map(object({
-      name                     = string
-      session_affinity_enabled = optional(bool, false)
+#     origin_groups = optional(map(object({
+#       name                     = string
+#       session_affinity_enabled = optional(bool, false)
       
-      load_balancing = optional(object({
-        additional_latency_in_milliseconds = optional(number, 50)
-        sample_size                        = optional(number, 4)
-        successful_samples_required        = optional(number, 3)
-      }), {})
+#       load_balancing = optional(object({
+#         additional_latency_in_milliseconds = optional(number, 50)
+#         sample_size                        = optional(number, 4)
+#         successful_samples_required        = optional(number, 3)
+#       }), {})
       
-      health_probe = optional(object({
-        interval_in_seconds = number
-        path                = optional(string, "/")
-        protocol            = string
-        request_type        = optional(string, "HEAD")
-      }))
-    })), {})
+#       health_probe = optional(object({
+#         interval_in_seconds = number
+#         path                = optional(string, "/")
+#         protocol            = string
+#         request_type        = optional(string, "HEAD")
+#       }))
+#     })), {})
     
-    origins = optional(map(object({
-      name                           = string
-      origin_group_key              = string
-      host_name                      = string
-      http_port                      = optional(number, 80)
-      https_port                     = optional(number, 443)
-      certificate_name_check_enabled = optional(bool, true)
-      enabled                        = optional(bool, true)
-      priority                       = optional(number, 1)
-      weight                         = optional(number, 1000)
+#     origins = optional(map(object({
+#       name                           = string
+#       origin_group_key              = string
+#       host_name                      = string
+#       http_port                      = optional(number, 80)
+#       https_port                     = optional(number, 443)
+#       certificate_name_check_enabled = optional(bool, true)
+#       enabled                        = optional(bool, true)
+#       priority                       = optional(number, 1)
+#       weight                         = optional(number, 1000)
       
-      private_link = optional(object({
-        request_message        = optional(string)
-        target_type           = optional(string)
-        location              = string
-        private_link_target_id = string
-      }))
-    })), {})
+#       private_link = optional(object({
+#         request_message        = optional(string)
+#         target_type           = optional(string)
+#         location              = string
+#         private_link_target_id = string
+#       }))
+#     })), {})
     
-    routes = optional(map(object({
-      name                   = string
-      endpoint_key           = string
-      origin_group_key       = string
-      origin_keys            = list(string)
-      patterns_to_match      = list(string)
-      supported_protocols    = list(string)
-      forwarding_protocol    = optional(string, "HttpsOnly")
-      https_redirect_enabled = optional(bool, true)
-      enabled                = optional(bool, true)
-      link_to_default_domain = optional(bool, true)
+#     routes = optional(map(object({
+#       name                   = string
+#       endpoint_key           = string
+#       origin_group_key       = string
+#       origin_keys            = list(string)
+#       patterns_to_match      = list(string)
+#       supported_protocols    = list(string)
+#       forwarding_protocol    = optional(string, "HttpsOnly")
+#       https_redirect_enabled = optional(bool, true)
+#       enabled                = optional(bool, true)
+#       link_to_default_domain = optional(bool, true)
       
-      cache = optional(object({
-        query_string_caching_behavior = optional(string, "IgnoreQueryString")
-        query_strings                 = optional(list(string), [])
-        compression_enabled           = optional(bool, true)
-        content_types_to_compress     = optional(list(string), [])
-      }))
+#       cache = optional(object({
+#         query_string_caching_behavior = optional(string, "IgnoreQueryString")
+#         query_strings                 = optional(list(string), [])
+#         compression_enabled           = optional(bool, true)
+#         content_types_to_compress     = optional(list(string), [])
+#       }))
       
-      custom_domains = optional(list(string), [])
-    })), {})
+#       custom_domains = optional(list(string), [])
+#     })), {})
     
-    custom_domains = optional(map(object({
-      name      = string
-      host_name = string
+#     custom_domains = optional(map(object({
+#       name      = string
+#       host_name = string
       
-      tls = optional(object({
-        certificate_type    = optional(string, "ManagedCertificate")
-        minimum_tls_version = optional(string, "TLS12")
-      }), {
-        certificate_type    = "ManagedCertificate"
-        minimum_tls_version = "TLS12"
-      })
-    })), {})
-  })
+#       tls = optional(object({
+#         certificate_type    = optional(string, "ManagedCertificate")
+#         minimum_tls_version = optional(string, "TLS12")
+#       }), {
+#         certificate_type    = "ManagedCertificate"
+#         minimum_tls_version = "TLS12"
+#       })
+#     })), {})
+#   })
   
-  default = {
-    create   = false
-    name     = ""
-    sku_name = "Standard_AzureFrontDoor"
-  }
-}
+#   default = {
+#     create   = false
+#     name     = ""
+#     sku_name = "Standard_AzureFrontDoor"
+#   }
+# }
 
 # # ============================================
 # # AZURE FUNCTIONS LINUX VARIABLES
@@ -786,5 +786,165 @@ variable "vnet" {
     create_vnet = false
     vnet_name   = ""
     subnets     = {}
+  }
+}
+
+
+# ============================================
+# FRONT DOOR VARIABLES
+# ============================================
+
+variable "front_door" {
+  description = "Configuración de Azure Front Door"
+  type = object({
+    create                   = bool
+    name                     = string
+    sku_name                 = optional(string, "Standard_AzureFrontDoor")
+    response_timeout_seconds = optional(number, 120)
+    
+    endpoints = optional(map(object({
+      name    = string
+      enabled = optional(bool, true)
+    })), {})
+    
+    origin_groups = optional(map(object({
+      name                     = string
+      session_affinity_enabled = optional(bool, false)
+      
+      load_balancing = optional(object({
+        additional_latency_in_milliseconds = optional(number, 50)
+        sample_size                        = optional(number, 4)
+        successful_samples_required        = optional(number, 3)
+      }), {})
+      
+      health_probe = optional(object({
+        interval_in_seconds = number
+        path                = optional(string, "/")
+        protocol            = string
+        request_type        = optional(string, "HEAD")
+      }))
+    })), {})
+    
+    origins = optional(map(object({
+      name                           = string
+      origin_group_key              = string
+      host_name                      = string
+      http_port                      = optional(number, 80)
+      https_port                     = optional(number, 443)
+      certificate_name_check_enabled = optional(bool, true)
+      enabled                        = optional(bool, true)
+      priority                       = optional(number, 1)
+      weight                         = optional(number, 1000)
+      
+      private_link = optional(object({
+        request_message        = optional(string)
+        target_type           = optional(string)
+        location              = string
+        private_link_target_id = string
+      }))
+    })), {})
+    
+    routes = optional(map(object({
+      name                   = string
+      endpoint_key           = string
+      origin_group_key       = string
+      origin_keys            = list(string)
+      patterns_to_match      = list(string)
+      supported_protocols    = list(string)
+      forwarding_protocol    = optional(string, "HttpsOnly")
+      https_redirect_enabled = optional(bool, true)
+      enabled                = optional(bool, true)
+      link_to_default_domain = optional(bool, true)
+      
+      cache = optional(object({
+        query_string_caching_behavior = optional(string, "IgnoreQueryString")
+        query_strings                 = optional(list(string), [])
+        compression_enabled           = optional(bool, true)
+        content_types_to_compress     = optional(list(string), [])
+      }))
+      
+      custom_domains = optional(list(string), [])
+      rule_set_keys  = optional(list(string), [])
+    })), {})
+    
+    custom_domains = optional(map(object({
+      name      = string
+      host_name = string
+      
+      tls = optional(object({
+        certificate_type    = optional(string, "ManagedCertificate")
+        minimum_tls_version = optional(string, "TLS12")
+      }), {
+        certificate_type    = "ManagedCertificate"
+        minimum_tls_version = "TLS12"
+      })
+    })), {})
+    
+    rule_sets = optional(map(object({
+      name = string
+    })), {})
+    
+    rules = optional(map(object({
+      name              = string
+      rule_set_key      = string
+      order             = number
+      behavior_on_match = optional(string, "Continue")
+      
+      conditions = optional(object({
+        request_uri = optional(object({
+          operator         = string
+          match_values     = optional(list(string), [])
+          negate_condition = optional(bool, false)
+          transforms       = optional(list(string), [])
+        }))
+        
+        url_path = optional(object({
+          operator         = string
+          match_values     = optional(list(string), [])
+          negate_condition = optional(bool, false)
+          transforms       = optional(list(string), [])
+        }))
+        
+        url_file_extension = optional(object({
+          operator         = string
+          match_values     = list(string)
+          negate_condition = optional(bool, false)
+          transforms       = optional(list(string), [])
+        }))
+      }))
+      
+      actions = object({
+        url_rewrite = optional(object({
+          source_pattern          = string
+          destination             = string
+          preserve_unmatched_path = optional(bool, false)
+        }))
+        
+        url_redirect = optional(object({
+          redirect_type        = string
+          redirect_protocol    = optional(string, "Https")
+          destination_hostname = optional(string)
+          destination_path     = optional(string)
+          query_string         = optional(string)
+          destination_fragment = optional(string)
+        }))
+        
+        response_headers = optional(map(object({
+          action = string
+          value  = optional(string)
+        })), {})
+        
+        request_headers = optional(map(object({
+          action = string
+          value  = optional(string)
+        })), {})
+      })
+    })), {})
+  })
+  
+  default = {
+    create   = false
+    name     = ""
+    sku_name = "Standard_AzureFrontDoor"
   }
 }

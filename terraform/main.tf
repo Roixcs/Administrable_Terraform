@@ -517,5 +517,29 @@ module "vnet" {
   depends_on = [module.resource_group]
 }
 
+# ============================================
+# FRONT DOOR MODULE
+# ============================================
 
+module "front_door" {
+  source                   = "./modules/front_door"
+  create_front_door        = var.front_door.create
+  name                     = var.front_door.name
+  resource_group_name      = local.rg_name
+  sku_name                 = var.front_door.sku_name
+  response_timeout_seconds = var.front_door.response_timeout_seconds
+  endpoints                = var.front_door.endpoints
+  origin_groups            = var.front_door.origin_groups
+  origins                  = var.front_door.origins
+  routes                   = var.front_door.routes
+  custom_domains           = var.front_door.custom_domains
+  rule_sets                = var.front_door.rule_sets
+  rules                    = var.front_door.rules
+  tags                     = local.common_tags
+  
+  depends_on = [
+    module.resource_group,
+    module.storage_account
+  ]
+}
 

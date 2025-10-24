@@ -880,3 +880,172 @@ vnet = {
 | **SQL Managed Instance** | `Microsoft.Sql/managedInstances` | Varias |
 
 ---
+
+
+
+# ============================================
+# FRONT DOOR CONFIGURATION
+# ============================================
+
+front_door = {
+  create   = true
+  name     = "fd-myproject-test-dev"
+  sku_name = "Standard_AzureFrontDoor"
+  response_timeout_seconds = 120
+  
+  # Endpoints
+  endpoints = {
+    web = {
+      name    = "web-endpoint"
+      enabled = true
+    }
+  }
+  
+  # Origin Groups
+  origin_groups = {
+    static_website = {
+      name                     = "static-website-og"
+      session_affinity_enabled = false
+      
+      load_balancing = {
+        additional_latency_in_milliseconds = 50
+        sample_size                        = 4
+        successful_samples_required        = 3
+      }
+      
+      health_probe = {
+        interval_in_seconds = 30
+        path                = "/"
+        protocol            = "Https"
+        request_type        = "HEAD"
+      }
+    }
+  }
+  
+  # Origins (Storage Account Static Website)
+  origins = {
+    storage_web = {
+      name                           = "storage-website-origin"
+      origin_group_key              = "static_website"
+      host_name                      = "testclientdevweb.z13.web.core.windows.net"  # Cambiar por tu storage
+      http_port                      = 80
+      https_port                     = 443
+      certificate_name_check_enabled = true
+      enabled                        = true
+      priority                       = 1
+      weight                         = 1000
+    }
+  }
+  
+  # Rule Sets (para rewrites y headers)
+  rule_sets = {
+    security_and_rewrites = {
+      name = "SecurityAndRewrites"
+    }
+  }
+  
+  # Rules (Rewrite a index.html y Security Headers)
+  rules = {
+    # Regla 1: Rewrite root a index.html
+    rewrite_to_index = {
+      name              = "RewriteToIndex"
+      rule_set_key      = "security_and_rewrites"
+      order             = 1
+      behavior_on_match = "Continue"
+      
+      conditions = {
+        url_path = {
+          operator     = "Equal"
+          match_values = ["/"]
+        }
+      }
+      
+      actions = {
+        url_rewrite = {
+          source_pattern          = "/"
+          destination             = "/index.html"
+          preserve_unmatched_path = false
+        }
+      }
+    }
+    
+    # Regla 2: Security Headers
+    security_headers = {
+      name              = "SecurityHeaders"
+      rule_set_key      = "security_and_rewrites"
+      order             = 2
+      behavior_on_match = "Continue"
+      
+      actions = {
+        response_headers = {
+          "X-Content-Type-Options" = {
+            action = "Overwrite"
+            value  = "nosniff"
+          }
+          "Strict-Transport-Security" = {
+            action = "Overwrite"
+            value  = "max-age=31536000; includeSubDomains"
+          }
+          "Content-Security-Policy" = {
+            action = "Overwrite"
+            value  = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+          }
+          "X-Frame-Options" = {
+            action = "Overwrite"
+            value  = "DENY"
+          }
+          "Referrer-Policy" = {
+            action = "Overwrite"
+            value  = "strict-origin-when-cross-origin"
+          }
+        }
+      }
+    }
+  }
+  
+  # Routes
+  routes = {
+    default_route = {
+      name                   = "default-route"
+      endpoint_key           = "web"
+      origin_group_key       = "static_website"
+      origin_keys            = ["storage_web"]
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+      forwarding_protocol    = "HttpsOnly"
+      https_redirect_enabled = true
+      enabled                = true
+      link_to_default_domain = true
+      rule_set_keys          = ["security_and_rewrites"]
+      
+      cache = {
+        query_string_caching_behavior = "IgnoreQueryString"
+        compression_enabled           = true
+        content_types_to_compress     = [
+          "text/html",
+          "text/css",
+          "text/javascript",
+          "application/javascript",
+          "application/json",
+          "application/xml"
+        ]
+      }
+    }
+  }
+  
+  # Custom Domains (opcional)
+  custom_domains = {
+    # Ejemplo - descomenta y configura si tienes dominio personalizado
+    # main_domain = {
+    #   name      = "www-mydomain-com"
+    #   host_name = "www.mydomain.com"
+    #   
+    #   tls = {
+    #     certificate_type    = "ManagedCertificate"
+    #     minimum_tls_version = "TLS12"
+    #   }
+    # }
+  }
+}
+
+
