@@ -1,35 +1,45 @@
 # ============================================
 # Storage Account Module - Outputs
+# DISPATCHER
 # ============================================
 
-output "id" {
-  description = "ID del Storage Account"
-  value       = azurerm_storage_account.this.id
+output "storage_accounts" {
+  description = "Información de los Storage Accounts creados"
+  value = {
+    for name, sa in azurerm_storage_account.this : name => {
+      id                    = sa.id
+      name                  = sa.name
+      primary_blob_endpoint = sa.primary_blob_endpoint
+      primary_web_endpoint  = sa.primary_web_endpoint
+      primary_access_key    = sa.primary_access_key
+    }
+  }
+  sensitive = true
 }
 
-output "name" {
-  description = "Nombre del Storage Account"
-  value       = azurerm_storage_account.this.name
+output "static_websites" {
+  description = "Endpoints de Static Websites"
+  value = {
+    for name, website in azurerm_storage_account_static_website.this : name => {
+      primary_web_endpoint = azurerm_storage_account.this[name].primary_web_endpoint
+    }
+  }
 }
 
-output "primary_blob_endpoint" {
-  description = "Endpoint primario de Blob"
-  value       = azurerm_storage_account.this.primary_blob_endpoint
+output "containers" {
+  description = "Containers creados"
+  value = {
+    for key, container in azurerm_storage_container.this : key => {
+      id   = container.id
+      name = container.name
+    }
+  }
 }
 
-output "primary_web_endpoint" {
-  description = "Endpoint primario de Static Website"
-  value       = azurerm_storage_account.this.primary_web_endpoint
-}
-
-output "primary_access_key" {
-  description = "Primary Access Key del Storage Account"
-  value       = azurerm_storage_account.this.primary_access_key
-  sensitive   = true
-}
-
-output "primary_connection_string" {
-  description = "Primary Connection String del Storage Account"
-  value       = azurerm_storage_account.this.primary_connection_string
-  sensitive   = true
+output "connection_strings" {
+  description = "Connection Strings de los Storage Accounts"
+  value = {
+    for name, sa in azurerm_storage_account.this : name => sa.primary_connection_string
+  }
+  sensitive = true
 }

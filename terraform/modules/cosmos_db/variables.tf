@@ -22,11 +22,6 @@ variable "location" {
   type        = string
 }
 
-variable "database_name" {
-  description = "Nombre de la base de datos"
-  type        = string
-}
-
 variable "offer_type" {
   description = "Tipo de oferta (Standard)"
   type        = string
@@ -55,27 +50,91 @@ variable "consistency_level" {
   }
 }
 
+variable "max_interval_in_seconds" {
+  description = "Max interval en segundos (solo para BoundedStaleness)"
+  type        = number
+  default     = 5
+}
+
+variable "max_staleness_prefix" {
+  description = "Max staleness prefix (solo para BoundedStaleness)"
+  type        = number
+  default     = 100
+}
+
 variable "enable_serverless" {
   description = "Habilitar modo serverless"
   type        = bool
   default     = true
 }
 
-variable "enable_automatic_failover" {
-  description = "Habilitar failover automático"
+variable "backup_enabled" {
+  description = "Habilitar backup (no disponible en serverless)"
   type        = bool
   default     = false
 }
 
-variable "containers" {
-  description = "Lista de containers a crear"
+variable "backup_type" {
+  description = "Tipo de backup (Periodic o Continuous)"
+  type        = string
+  default     = "Periodic"
+}
+
+variable "backup_interval_in_minutes" {
+  description = "Intervalo de backup en minutos"
+  type        = number
+  default     = 240
+}
+
+variable "backup_retention_in_hours" {
+  description = "Retención de backup en horas"
+  type        = number
+  default     = 8
+}
+
+variable "databases" {
+  description = "Lista de databases y sus containers"
   type = list(object({
-    name           = string
-    partition_keys = list(string)
-    throughput     = optional(number, null)  # null para serverless
-    default_ttl    = optional(number, -1)    # -1 = sin TTL
+    name       = string
+    throughput = optional(number, null)  # Throughput a nivel DB (shared), null para serverless
+    
+    containers = list(object({
+      name           = string
+      partition_keys = list(string)
+      throughput     = optional(number, null)  # Throughput dedicado, null para serverless o shared
+      default_ttl    = optional(number, -1)    # -1 = sin TTL, 0 = on sin default, >0 = TTL en segundos
+      
+      # Unique Keys
+      unique_keys = optional(list(object({
+        paths = list(string)
+      })), [])
+      
+      # Indexing Policy
+      indexing_policy = optional(object({
+        indexing_mode   = optional(string, "consistent")
+        included_paths  = optional(list(string), ["/*"])
+        excluded_paths  = optional(list(string), [])
+        composite_indexes = optional(list(list(object({
+          path  = string
+          order = string  # "ascending" o "descending"
+        }))), [])
+      }))
+      
+      # Stored Procedures
+      stored_procedures = optional(list(object({
+        name = string
+        body = string
+      })), [])
+    }))
   }))
   default = []
+  
+  validation {
+    condition = alltrue([
+      for db in var.databases : length(db.containers) > 0
+    ])
+    error_message = "Cada database debe tener al menos un container."
+  }
 }
 
 variable "tags" {

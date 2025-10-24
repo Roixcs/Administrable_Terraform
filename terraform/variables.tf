@@ -87,58 +87,58 @@ variable "resource_group" {
 # Storage Accounts (INDEPENDIENTES - no para Functions)
 # ============================================
 
-variable "storage_accounts" {
-  description = "Storage Accounts independientes (Static Website o V2 general)"
-  type = map(object({
-    name                     = string
-    storage_type             = string  # "static_website" o "general"
-    account_tier             = optional(string, "Standard")
-    account_replication_type = optional(string, "LRS")
-  }))
-  default = {}
+# variable "storage_accounts" {
+#   description = "Storage Accounts independientes (Static Website o V2 general)"
+#   type = map(object({
+#     name                     = string
+#     storage_type             = string  # "static_website" o "general"
+#     account_tier             = optional(string, "Standard")
+#     account_replication_type = optional(string, "LRS")
+#   }))
+#   default = {}
   
-  validation {
-    condition = alltrue([
-      for k, v in var.storage_accounts : contains(["static_website", "general"], v.storage_type)
-    ])
-    error_message = "storage_type debe ser 'static_website' o 'general'."
-  }
-}
+#   validation {
+#     condition = alltrue([
+#       for k, v in var.storage_accounts : contains(["static_website", "general"], v.storage_type)
+#     ])
+#     error_message = "storage_type debe ser 'static_website' o 'general'."
+#   }
+# }
 
 # ============================================
 # Service Bus
 # ============================================
 
-variable "service_bus" {
-  description = "Configuración del Service Bus"
-  type = object({
-    create         = bool
-    namespace_name = string
-    sku            = optional(string, "Standard")
-    queues = optional(list(object({
-      name                                        = string
-      max_size_in_megabytes                      = optional(number, 1024)
-      enable_partitioning                        = optional(bool, false)
-      enable_dead_lettering_on_message_expiration = optional(bool, true)
-      max_delivery_count                         = optional(number, 10)
-      duplicate_detection_history_time_window    = optional(string, "PT10M")
-    })), [])
-    topics = optional(list(object({
-      name                  = string
-      max_size_in_megabytes = optional(number, 1024)
-      enable_partitioning   = optional(bool, false)
-      subscriptions = optional(list(object({
-        name                                        = string
-        max_delivery_count                          = optional(number, 10)
-        enable_dead_lettering_on_message_expiration = optional(bool, true)
-      })), [])
-    })), [])
-  })
-  default = {
-    create         = false
-    namespace_name = ""
-  }
-}
+# variable "service_bus" {
+#   description = "Configuración del Service Bus"
+#   type = object({
+#     create         = bool
+#     namespace_name = string
+#     sku            = optional(string, "Standard")
+#     queues = optional(list(object({
+#       name                                        = string
+#       max_size_in_megabytes                      = optional(number, 1024)
+#       enable_partitioning                        = optional(bool, false)
+#       enable_dead_lettering_on_message_expiration = optional(bool, true)
+#       max_delivery_count                         = optional(number, 10)
+#       duplicate_detection_history_time_window    = optional(string, "PT10M")
+#     })), [])
+#     topics = optional(list(object({
+#       name                  = string
+#       max_size_in_megabytes = optional(number, 1024)
+#       enable_partitioning   = optional(bool, false)
+#       subscriptions = optional(list(object({
+#         name                                        = string
+#         max_delivery_count                          = optional(number, 10)
+#         enable_dead_lettering_on_message_expiration = optional(bool, true)
+#       })), [])
+#     })), [])
+#   })
+#   default = {
+#     create         = false
+#     namespace_name = ""
+#   }
+# }
 
 
 # ============================================
@@ -399,26 +399,26 @@ variable "front_door" {
   }
 }
 
-# ============================================
-# AZURE FUNCTIONS LINUX VARIABLES
-# ============================================
+# # ============================================
+# # AZURE FUNCTIONS LINUX VARIABLES
+# # ============================================
 
-variable "functions_linux" {
-  description = "Configuración de Azure Functions Linux (Flex Consumption)"
-  type = list(object({
-    name        = string
-    plan_type   = string  # "FlexConsumption"
-    create      = bool
-    plan_name   = optional(string)
+# variable "functions_linux" {
+#   description = "Configuración de Azure Functions Linux (Flex Consumption)"
+#   type = list(object({
+#     name        = string
+#     plan_type   = string  # "FlexConsumption"
+#     create      = bool
+#     plan_name   = optional(string)
     
-    app_settings = optional(list(object({
-      name        = string
-      value       = string
-      slotSetting = bool
-    })), [])
-  }))
-  default = []
-}
+#     app_settings = optional(list(object({
+#       name        = string
+#       value       = string
+#       slotSetting = bool
+#     })), [])
+#   }))
+#   default = []
+# }
 
 # ============================================
 # AZURE FUNCTIONS WINDOWS VARIABLES
@@ -471,6 +471,152 @@ variable "reuse_existing_log_analytics_workspace" {
   description = "Si true, intenta reutilizar el workspace default de Azure para Functions Linux"
   type        = bool
   default     = true
+}
+
+
+
+
+
+
+
+
+# ============================================
+# Azure Functions Linux - DISPATCHER
+# ============================================
+
+variable "functions_linux" {
+  description = "Lista de Azure Functions Linux (Flex Consumption)"
+  type = list(object({
+    name    = string
+    runtime = optional(string, "dotnet-isolated")
+    version = optional(string, "8.0")
+    app_settings = optional(list(object({
+      name         = string
+      value        = string
+      slot_setting = optional(bool, false)
+    })), [])
+    instance_memory_mb     = optional(number, 2048)
+    maximum_instance_count = optional(number, 100)
+  }))
+  default = []
+}
+
+
+# ============================================
+# Azure Functions Windows
+# ============================================
+
+variable "functions_windows" {
+  description = "Lista de Azure Functions Windows"
+  type = list(object({
+    name        = string
+    enabled     = optional(bool, true)
+    plan_type   = string  # "consumption" o "basic"
+    plan_name   = optional(string)
+    
+    app_settings = optional(list(object({
+      name         = string
+      value        = string
+      slot_setting = optional(bool, false)
+    })), [])
+    
+    always_on                     = optional(bool, false)
+    dotnet_version                = optional(string, "v8.0")
+    use_dotnet_isolated_runtime   = optional(bool, true)
+    
+    vnet_integration = optional(object({
+      subnet_id = string
+    }))
+    
+    identity_type                 = optional(string, "SystemAssigned")
+    identity_ids                  = optional(list(string), [])
+    application_insights_enabled  = optional(bool, true)
+    storage_account_name          = optional(string)
+    storage_uses_managed_identity = optional(bool, false)
+  }))
+  default = []
+}
+
+# ============================================
+# Service Bus
+# ============================================
+
+variable "service_bus" {
+  description = "Configuración del Service Bus"
+  type = object({
+    namespace_name = string
+    sku            = optional(string, "Standard")
+    queues = optional(list(object({
+      name                                        = string
+      enabled                                     = optional(bool, true)
+      max_size_in_megabytes                       = optional(number, 1024)
+      enable_dead_lettering_on_message_expiration = optional(bool, true)
+      max_delivery_count                          = optional(number, 10)
+      duplicate_detection_history_time_window     = optional(string, "PT10M")
+      enable_batched_operations                   = optional(bool, true)
+    })), [])
+    topics = optional(list(object({
+      name                                    = string
+      enabled                                 = optional(bool, true)
+      max_size_in_megabytes                   = optional(number, 1024)
+      duplicate_detection_history_time_window = optional(string, "PT10M")
+      enable_batched_operations               = optional(bool, true)
+      subscriptions = optional(list(object({
+        name                                        = string
+        enabled                                     = optional(bool, true)
+        max_delivery_count                          = optional(number, 10)
+        enable_dead_lettering_on_message_expiration = optional(bool, true)
+      })), [])
+    })), [])
+  })
+}
+
+
+# ============================================
+# Storage Accounts (INDEPENDIENTES - no para Functions)
+# ============================================
+
+variable "storage_accounts" {
+  description = "Storage Accounts independientes (Static Website o V2 general)"
+  type = list(object({
+    name                     = string
+    storage_type             = string  # "static_website" o "general"
+    account_tier             = optional(string, "Standard")
+    account_replication_type = optional(string, "LRS")
+    access_tier              = optional(string, "Hot")
+    
+    enable_https_traffic_only = optional(bool, true)
+    min_tls_version           = optional(string, "TLS1_2")
+    
+    # Static Website
+    index_document     = optional(string, "index.html")
+    error_404_document = optional(string, "404.html")
+    
+    # Containers
+    containers = optional(list(object({
+      name        = string
+      access_type = optional(string, "private")
+    })), [])
+    
+    # Lifecycle Management
+    lifecycle_rules = optional(list(object({
+      name                       = string
+      enabled                    = optional(bool, true)
+      prefix_match               = optional(list(string), [])
+      blob_types                 = optional(list(string), ["blockBlob"])
+      tier_to_cool_after_days    = optional(number, null)
+      tier_to_archive_after_days = optional(number, null)
+      delete_after_days          = optional(number, null)
+    })), [])
+  }))
+  default = []
+  
+  validation {
+    condition = alltrue([
+      for sa in var.storage_accounts : contains(["static_website", "general"], sa.storage_type)
+    ])
+    error_message = "storage_type debe ser 'static_website' o 'general'."
+  }
 }
 
 

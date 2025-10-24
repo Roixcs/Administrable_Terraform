@@ -1,21 +1,33 @@
+# ============================================
+# Azure Function Linux Module - Variables
+# DISPATCHER
+# ============================================
+
 variable "functions" {
   description = "Lista de Azure Functions Linux (Flex Consumption) a crear"
   type = list(object({
-    name        = string
-    plan_type   = string  # "FlexConsumption"
-    plan_name   = optional(string)
-    create      = bool
-    app_settings = list(object({
-      name        = string
-      value       = string
-      slotSetting = bool
-    }))
+    name    = string
+    enabled = optional(bool, true)  # ← Nueva propiedad
+    runtime = optional(string, "dotnet-isolated")
+    version = optional(string, "8.0")
+    app_settings = optional(list(object({
+      name         = string
+      value        = string
+      slot_setting = optional(bool, false)
+    })), [])
+    instance_memory_mb     = optional(number, 2048)
+    maximum_instance_count = optional(number, 100)
   }))
-}
-
-variable "location" {
-  description = "Ubicación de los recursos"
-  type        = string
+  
+  validation {
+    condition     = alltrue([for f in var.functions : can(regex("^[a-z0-9-]+$", f.name))])
+    error_message = "Function names must contain only lowercase letters, numbers, and hyphens."
+  }
+  
+  validation {
+    condition     = length(var.functions) == length(distinct([for f in var.functions : f.name]))
+    error_message = "Function names must be unique."
+  }
 }
 
 variable "resource_group_name" {
@@ -24,29 +36,23 @@ variable "resource_group_name" {
 }
 
 variable "resource_group_id" {
-  description = "Resource ID del Resource Group"
+  description = "ID del Resource Group (para azapi)"
   type        = string
 }
 
-variable "subscription_id" {
-  description = "Azure Subscription ID (para calcular nombre del workspace default)"
+variable "location" {
+  description = "Location de Azure"
   type        = string
 }
 
-variable "log_analytics_workspace_id" {
-  description = "ID del Log Analytics Workspace (opcional, se reutiliza el default si no se especifica)"
+variable "workspace_id" {
+  description = "ID del Log Analytics Workspace para Application Insights"
   type        = string
   default     = null
 }
 
-variable "reuse_existing_workspace" {
-  description = "Si true, intenta reutilizar el workspace default de Azure"
-  type        = bool
-  default     = true
-}
-
 variable "tags" {
-  description = "Etiquetas para los recursos"
+  description = "Tags para los recursos"
   type        = map(string)
   default     = {}
 }

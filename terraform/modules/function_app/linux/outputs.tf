@@ -1,69 +1,41 @@
-# Function App Outputs
-output "function_app_ids" {
-  description = "IDs de las Function Apps"
-  value = {
-    for key, func in azapi_resource.functionApps : key => func.id
-  }
-}
+# ============================================
+# Azure Function Linux Module - Outputs
+# DISPATCHER
+# ============================================
 
-output "function_app_names" {
-  description = "Nombres de las Function Apps"
-  value = [
-    for func in azapi_resource.functionApps : func.name
-  ]
-}
-
-output "function_app_identities" {
-  description = "System Assigned Identities"
+output "function_apps" {
+  description = "Información de las Function Apps creadas"
   value = {
-    for key, func in azapi_resource.functionApps : key => {
-      principal_id = jsondecode(func.output).identity.principalId
-      tenant_id    = jsondecode(func.output).identity.tenantId
+    for name, func in azapi_resource.function_app : name => {
+      id                = func.id
+      name              = func.name
+      enabled           = jsondecode(func.output).properties.enabled
+      default_hostname  = jsondecode(func.output).properties.defaultHostName
+      principal_id      = jsondecode(func.output).identity.principalId
+      state             = jsondecode(func.output).properties.state
     }
   }
 }
 
-# Storage Account Outputs
-output "storage_account_names" {
-  description = "Nombres de Storage Accounts"
+output "storage_accounts" {
+  description = "Storage Accounts creados para las Functions"
   value = {
-    for key, sa in azurerm_storage_account.storage_account : key => sa.name
+    for name, sa in azurerm_storage_account.function : name => {
+      id   = sa.id
+      name = sa.name
+    }
   }
 }
 
-output "storage_account_ids" {
-  description = "IDs de Storage Accounts"
+output "application_insights" {
+  description = "Application Insights creados para las Functions"
   value = {
-    for key, sa in azurerm_storage_account.storage_account : key => sa.id
-  }
-}
-
-# Application Insights Outputs
-output "application_insights_ids" {
-  description = "IDs de Application Insights"
-  value = {
-    for key, ai in azurerm_application_insights.app_insights : key => ai.id
-  }
-}
-
-output "application_insights_connection_strings" {
-  description = "Connection Strings de Application Insights"
-  value = {
-    for key, ai in azurerm_application_insights.app_insights : key => ai.connection_string
+    for name, ai in azurerm_application_insights.function : name => {
+      id                  = ai.id
+      name                = ai.name
+      instrumentation_key = ai.instrumentation_key
+      connection_string   = ai.connection_string
+    }
   }
   sensitive = true
-}
-
-# Log Analytics Workspace Output
-output "workspace_id" {
-  description = "ID del Log Analytics Workspace usado"
-  value       = local.workspace_id
-}
-
-# Server Farm (App Service Plan) Outputs
-output "server_farm_ids" {
-  description = "IDs de los App Service Plans (Flex Consumption)"
-  value = {
-    for key, plan in azapi_resource.serverFarm : key => plan.id
-  }
 }

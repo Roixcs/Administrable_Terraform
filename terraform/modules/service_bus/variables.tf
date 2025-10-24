@@ -37,11 +37,11 @@ variable "queues" {
   description = "Lista de queues a crear"
   type = list(object({
     name                                        = string
-    max_size_in_megabytes                      = optional(number, 1024)
-    enable_partitioning                        = optional(bool, false)
+    enabled                                     = optional(bool, true)
+    max_size_in_megabytes                       = optional(number, 1024)
     enable_dead_lettering_on_message_expiration = optional(bool, true)
-    max_delivery_count                         = optional(number, 10)
-    duplicate_detection_history_time_window    = optional(string, "PT10M")
+    max_delivery_count                          = optional(number, 10)
+    duplicate_detection_history_time_window     = optional(string, "PT10M")
   }))
   default = []
 }
@@ -49,12 +49,14 @@ variable "queues" {
 variable "topics" {
   description = "Lista de topics a crear con sus subscriptions"
   type = list(object({
-    name                  = string
-    max_size_in_megabytes = optional(number, 1024)
-    enable_partitioning   = optional(bool, false)
+    name                                    = string
+    enabled                                 = optional(bool, true)
+    max_size_in_megabytes                   = optional(number, 1024)
+    duplicate_detection_history_time_window = optional(string, "PT10M")
     subscriptions = optional(list(object({
-      name                                = string
-      max_delivery_count                  = optional(number, 10)
+      name                                        = string
+      enabled                                     = optional(bool, true)
+      max_delivery_count                          = optional(number, 10)
       enable_dead_lettering_on_message_expiration = optional(bool, true)
     })), [])
   }))

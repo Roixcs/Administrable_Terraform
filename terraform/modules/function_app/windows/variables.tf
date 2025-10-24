@@ -1,9 +1,14 @@
+# ============================================
+# Azure Function Windows Module - Variables
+# DISPATCHER
+# ============================================
+
 variable "functions" {
   description = "Lista de Azure Functions Windows a crear"
   type = list(object({
     name        = string
+    enabled     = optional(bool, true)  # ← Control de estado
     plan_type   = string  # "consumption" o "basic"
-    create      = bool
     plan_name   = optional(string)
     
     # Application Settings
@@ -14,9 +19,9 @@ variable "functions" {
     })), [])
     
     # Site Config
-    always_on                              = optional(bool, false)
-    dotnet_version                         = optional(string, "v8.0")
-    use_dotnet_isolated_runtime           = optional(bool, true)
+    always_on                     = optional(bool, false)
+    dotnet_version                = optional(string, "v8.0")
+    use_dotnet_isolated_runtime   = optional(bool, true)
     
     # VNet Integration
     vnet_integration = optional(object({
@@ -24,17 +29,31 @@ variable "functions" {
     }))
     
     # Identity
-    identity_type = optional(string, "SystemAssigned")
+    identity_type = optional(string, "SystemAssigned")  # SystemAssigned, UserAssigned
     identity_ids  = optional(list(string), [])
     
     # Application Insights
     application_insights_enabled = optional(bool, true)
     
     # Storage Account
-    storage_account_name               = optional(string)
-    storage_uses_managed_identity      = optional(bool, false)
+    storage_account_name          = optional(string)
+    storage_uses_managed_identity = optional(bool, false)
   }))
-  default = []
+  
+  validation {
+    condition     = alltrue([for f in var.functions : can(regex("^[a-z0-9-]+$", f.name))])
+    error_message = "Function names must contain only lowercase letters, numbers, and hyphens."
+  }
+  
+  validation {
+    condition     = length(var.functions) == length(distinct([for f in var.functions : f.name]))
+    error_message = "Function names must be unique."
+  }
+  
+  validation {
+    condition     = alltrue([for f in var.functions : contains(["consumption", "basic"], f.plan_type)])
+    error_message = "plan_type must be either 'consumption' or 'basic'."
+  }
 }
 
 variable "location" {
@@ -47,14 +66,14 @@ variable "resource_group_name" {
   type        = string
 }
 
-variable "log_analytics_workspace_id" {
+variable "workspace_id" {
   description = "ID del Log Analytics Workspace (opcional)"
   type        = string
   default     = null
 }
 
 variable "tags" {
-  description = "Etiquetas para los recursos"
+  description = "Tags para los recursos"
   type        = map(string)
   default     = {}
 }

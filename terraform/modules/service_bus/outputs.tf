@@ -22,8 +22,9 @@ output "queues" {
   description = "Información de las queues creadas"
   value = {
     for name, queue in azurerm_servicebus_queue.this : name => {
-      id   = queue.id
-      name = queue.name
+      id      = queue.id
+      name    = queue.name
+      status  = queue.status
     }
   }
 }
@@ -32,8 +33,20 @@ output "topics" {
   description = "Información de los topics creados"
   value = {
     for name, topic in azurerm_servicebus_topic.this : name => {
-      id   = topic.id
-      name = topic.name
+      id     = topic.id
+      name   = topic.name
+      status = topic.status
+    }
+  }
+}
+
+output "subscriptions" {
+  description = "Información de las subscriptions creadas"
+  value = {
+    for key, sub in azurerm_servicebus_subscription.this : key => {
+      id     = sub.id
+      name   = sub.name
+      status = sub.status
     }
   }
 }

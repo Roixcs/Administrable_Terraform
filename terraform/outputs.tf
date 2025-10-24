@@ -26,15 +26,15 @@ output "storage_accounts" {
   } : {}
 }
 
-output "service_bus" {
-  description = "Información del Service Bus"
-  value = var.service_bus.create ? {
-    namespace_id   = module.service_bus[0].namespace_id
-    namespace_name = module.service_bus[0].namespace_name
-    queues         = module.service_bus[0].queues
-    topics         = module.service_bus[0].topics
-  } : null
-}
+# output "service_bus" {
+#   description = "Información del Service Bus"
+#   value = var.service_bus.create ? {
+#     namespace_id   = module.service_bus[0].namespace_id
+#     namespace_name = module.service_bus[0].namespace_name
+#     queues         = module.service_bus[0].queues
+#     topics         = module.service_bus[0].topics
+#   } : null
+# }
 
 output "functions_linux" {
   description = "Información de Azure Functions Linux"
@@ -176,3 +176,91 @@ output "function_app_windows_identities" {
   description = "Identities de las Azure Functions Windows"
   value       = module.azure_functions_windows.function_app_identities
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+### nuevos
+
+
+
+
+# ============================================
+# Functions Linux - DISPATCHER
+# ============================================
+
+output "functions_linux_dispatcher" {
+  description = "Información de Functions Linux (Dispatcher)"
+  value = length(var.functions_linux) > 0 ? {
+    function_apps    = module.functions_linux_dispatcher[0].function_apps
+    storage_accounts = module.functions_linux_dispatcher[0].storage_accounts
+  } : null
+}
+
+# ============================================
+# Function Linux - SINGLE
+# ============================================
+
+output "function_linux_critical" {
+  description = "Información de Function Linux crítica (Single)"
+  value = var.function_linux_critical.create ? {
+    id               = module.function_linux_critical.id
+    name             = module.function_linux_critical.name
+    default_hostname = module.function_linux_critical.default_hostname
+    principal_id     = module.function_linux_critical.principal_id
+  } : null
+}
+
+# ============================================
+# Functions Windows
+# ============================================
+
+output "functions_windows" {
+  description = "Información de Functions Windows"
+  value = length(var.functions_windows) > 0 ? {
+    function_apps    = module.functions_windows[0].function_apps
+    storage_accounts = module.functions_windows[0].storage_accounts
+    service_plans    = module.functions_windows[0].service_plans
+  } : null
+}
+
+
+# ============================================
+# Service Bus
+# ============================================
+
+output "service_bus" {
+  description = "Información del Service Bus"
+  value = {
+    namespace_id   = module.service_bus.namespace_id
+    namespace_name = module.service_bus.namespace_name
+    queues         = module.service_bus.queues
+    topics         = module.service_bus.topics
+    subscriptions  = module.service_bus.subscriptions
+  }
+}
+
+
+# ============================================
+# Storage Accounts
+# ============================================
+
+output "storage_accounts" {
+  description = "Información de los Storage Accounts independientes creados"
+  value = length(var.storage_accounts) > 0 ? {
+    accounts         = module.storage_accounts[0].storage_accounts
+    static_websites  = module.storage_accounts[0].static_websites
+    containers       = module.storage_accounts[0].containers
+  } : null
+  sensitive = true
+}
+
