@@ -12,7 +12,8 @@ resource "azurerm_signalr_service" "this" {
     capacity = var.capacity
   }
   
-  service_mode = var.service_mode
+  service_mode                  = var.service_mode
+  public_network_access_enabled = var.public_network_access_enabled
   
   cors {
     allowed_origins = var.cors_allowed_origins

@@ -59,6 +59,20 @@ variable "virtual_network_type" {
   }
 }
 
+variable "virtual_network_configuration" {
+  description = "Configuración de VNet (solo para Developer, Basic, Standard, Premium)"
+  type = object({
+    subnet_id = string
+  })
+  default = null
+}
+
+variable "public_ip_address_id" {
+  description = "ID de la Public IP para External VNet (opcional)"
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags para API Management"
   type        = map(string)

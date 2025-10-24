@@ -161,68 +161,68 @@ variable "application_insights" {
 # Cosmos DB
 # ============================================
 
-variable "cosmos_db" {
-  description = "Configuración de Cosmos DB"
-  type = object({
-    create             = bool
-    account_name       = string
-    database_name      = string
-    enable_serverless  = optional(bool, true)
-    consistency_level  = optional(string, "Session")
-    containers = optional(list(object({
-      name           = string
-      partition_keys = list(string)
-      throughput     = optional(number, null)
-      default_ttl    = optional(number, -1)
-    })), [])
-  })
-  default = {
-    create        = false
-    account_name  = ""
-    database_name = ""
-  }
-}
+# variable "cosmos_db" {
+#   description = "Configuración de Cosmos DB"
+#   type = object({
+#     create             = bool
+#     account_name       = string
+#     database_name      = string
+#     enable_serverless  = optional(bool, true)
+#     consistency_level  = optional(string, "Session")
+#     containers = optional(list(object({
+#       name           = string
+#       partition_keys = list(string)
+#       throughput     = optional(number, null)
+#       default_ttl    = optional(number, -1)
+#     })), [])
+#   })
+#   default = {
+#     create        = false
+#     account_name  = ""
+#     database_name = ""
+#   }
+# }
 
 # ============================================
 # Key Vault
 # ============================================
 
-variable "key_vault" {
-  description = "Configuración de Key Vault"
-  type = object({
-    create                     = bool
-    name                       = string
-    sku_name                   = optional(string, "standard")
-    soft_delete_retention_days = optional(number, 7)
-    purge_protection_enabled   = optional(bool, false)
-    enable_rbac_authorization  = optional(bool, true)
-  })
-  default = {
-    create = false
-    name   = ""
-  }
-}
+# variable "key_vault" {
+#   description = "Configuración de Key Vault"
+#   type = object({
+#     create                     = bool
+#     name                       = string
+#     sku_name                   = optional(string, "standard")
+#     soft_delete_retention_days = optional(number, 7)
+#     purge_protection_enabled   = optional(bool, false)
+#     enable_rbac_authorization  = optional(bool, true)
+#   })
+#   default = {
+#     create = false
+#     name   = ""
+#   }
+# }
 
 # ============================================
 # API Management
 # ============================================
 
-variable "api_management" {
-  description = "Configuración de API Management"
-  type = object({
-    create          = bool
-    name            = string
-    publisher_name  = string
-    publisher_email = string
-    sku_name        = optional(string, "Consumption_0")
-  })
-  default = {
-    create          = false
-    name            = ""
-    publisher_name  = ""
-    publisher_email = ""
-  }
-}
+# variable "api_management" {
+#   description = "Configuración de API Management"
+#   type = object({
+#     create          = bool
+#     name            = string
+#     publisher_name  = string
+#     publisher_email = string
+#     sku_name        = optional(string, "Consumption_0")
+#   })
+#   default = {
+#     create          = false
+#     name            = ""
+#     publisher_name  = ""
+#     publisher_email = ""
+#   }
+# }
 
 # ============================================
 # SignalR Service
@@ -247,36 +247,36 @@ variable "signalr" {
 # VNET
 # ============================================
 
-variable "vnet" {
-  description = "Configuración de Virtual Network"
-  type = object({
-    create        = bool
-    name          = string
-    address_space = optional(list(string), [])  # ✅ AHORA ES OPCIONAL
-    dns_servers   = optional(list(string), [])
-    subnets = optional(map(object({
-      name             = string
-      address_prefixes = list(string)
-      service_endpoints = optional(list(string), [])
-      delegation = optional(object({
-        name = string
-        service_delegation = object({
-          name    = string
-          actions = optional(list(string), [])
-        })
-      }))
-      private_endpoint_network_policies_enabled     = optional(bool, true)
-      private_link_service_network_policies_enabled = optional(bool, true)
-    })), {})
-  })
-  default = {
-    create        = false
-    name          = ""
-    address_space = []
-    dns_servers   = []
-    subnets       = {}
-  }
-}
+# variable "vnet" {
+#   description = "Configuración de Virtual Network"
+#   type = object({
+#     create        = bool
+#     name          = string
+#     address_space = optional(list(string), [])  # ✅ AHORA ES OPCIONAL
+#     dns_servers   = optional(list(string), [])
+#     subnets = optional(map(object({
+#       name             = string
+#       address_prefixes = list(string)
+#       service_endpoints = optional(list(string), [])
+#       delegation = optional(object({
+#         name = string
+#         service_delegation = object({
+#           name    = string
+#           actions = optional(list(string), [])
+#         })
+#       }))
+#       private_endpoint_network_policies_enabled     = optional(bool, true)
+#       private_link_service_network_policies_enabled = optional(bool, true)
+#     })), {})
+#   })
+#   default = {
+#     create        = false
+#     name          = ""
+#     address_space = []
+#     dns_servers   = []
+#     subnets       = {}
+#   }
+# }
 
 
 # ============================================
@@ -619,4 +619,172 @@ variable "storage_accounts" {
   }
 }
 
+# ============================================
+# Cosmos DB
+# ============================================
 
+variable "cosmos_db" {
+  description = "Configuración de Cosmos DB"
+  type = object({
+    create            = bool
+    account_name      = string
+    database_name     = string
+    enable_serverless = optional(bool, true)
+    consistency_level = optional(string, "Session")
+    containers = optional(list(object({
+      name           = string
+      partition_keys = list(string)
+      throughput     = optional(number, null)
+      default_ttl    = optional(number, -1)
+    })), [])
+    
+    # Network Configuration
+    public_network_access_enabled = optional(bool, true)
+    ip_range_filter              = optional(list(string), [])
+    virtual_network_rules = optional(list(object({
+      subnet_id                = string
+      ignore_missing_endpoint = optional(bool, false)
+    })), [])
+    enable_private_endpoint     = optional(bool, false)
+    private_endpoint_subnet_id  = optional(string, null)
+  })
+  default = {
+    create        = false
+    account_name  = ""
+    database_name = ""
+  }
+}
+
+
+# ============================================
+# Key Vault
+# ============================================
+
+variable "key_vault" {
+  description = "Configuración de Key Vault"
+  type = object({
+    create                     = bool
+    name                       = string
+    sku_name                   = optional(string, "standard")
+    soft_delete_retention_days = optional(number, 7)
+    purge_protection_enabled   = optional(bool, false)
+    enable_rbac_authorization  = optional(bool, true)
+    
+    # Permisos para servicios Azure
+    enabled_for_deployment          = optional(bool, false)
+    enabled_for_disk_encryption     = optional(bool, false)
+    enabled_for_template_deployment = optional(bool, false)
+    
+    # Network ACLs
+    network_acls = optional(object({
+      default_action = optional(string, "Allow")
+      bypass         = optional(string, "AzureServices")
+      ip_rules       = optional(list(string), [])
+    }), {
+      default_action = "Allow"
+      bypass         = "AzureServices"
+    })
+    
+    # Secretos a crear (opcional)
+    secrets = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+  })
+  default = {
+    create = false
+    name   = ""
+  }
+}
+
+# ============================================
+# API Management
+# ============================================
+
+variable "api_management" {
+  description = "Configuración de API Management"
+  type = object({
+    create          = bool
+    name            = string
+    publisher_name  = string
+    publisher_email = string
+    sku_name        = optional(string, "Consumption_0")
+    
+    # VNet Configuration (solo para non-Consumption SKUs)
+    virtual_network_type = optional(string, "None")
+    virtual_network_configuration = optional(object({
+      subnet_id = string
+    }), null)
+    public_ip_address_id = optional(string, null)
+  })
+  default = {
+    create          = false
+    name            = ""
+    publisher_name  = ""
+    publisher_email = ""
+  }
+}
+
+# ============================================
+# SignalR Service
+# ============================================
+
+variable "signalr" {
+  description = "Configuración de SignalR Service"
+  type = object({
+    create       = bool
+    name         = string
+    sku          = optional(string, "Free_F1")
+    capacity     = optional(number, 1)
+    service_mode = optional(string, "Default")
+    
+    # CORS
+    cors_allowed_origins = optional(list(string), ["*"])
+    
+    # Network
+    public_network_access_enabled = optional(bool, true)
+  })
+  default = {
+    create = false
+    name   = ""
+  }
+}
+
+
+
+# ============================================
+# Virtual Network
+# ============================================
+
+variable "vnet" {
+  description = "Configuración de Virtual Network"
+  type = object({
+    create_vnet         = bool
+    vnet_name           = string
+    resource_group_name = optional(string, null)  # Si es null, usa el RG del proyecto
+    address_space       = optional(list(string), [])
+    dns_servers         = optional(list(string), [])
+    
+    subnets = optional(map(object({
+      name             = string
+      address_prefixes = list(string)
+      service_endpoints = optional(list(string), [])
+      
+      delegation = optional(object({
+        name = string
+        service_delegation = object({
+          name    = string
+          actions = optional(list(string), [])
+        })
+      }))
+      
+      private_endpoint_network_policies_enabled     = optional(bool, true)
+      private_link_service_network_policies_enabled = optional(bool, true)
+    })), {})
+  })
+  default = {
+    create_vnet = false
+    vnet_name   = ""
+    subnets     = {}
+  }
+}

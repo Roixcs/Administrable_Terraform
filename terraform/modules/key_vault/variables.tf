@@ -50,13 +50,13 @@ variable "soft_delete_retention_days" {
 }
 
 variable "purge_protection_enabled" {
-  description = "Habilitar purge protection"
+  description = "Habilitar purge protection (recomendado para producción)"
   type        = bool
   default     = false
 }
 
 variable "enable_rbac_authorization" {
-  description = "Usar RBAC en lugar de access policies"
+  description = "Usar Azure RBAC para autorización (recomendado)"
   type        = bool
   default     = true
 }
@@ -74,7 +74,7 @@ variable "enabled_for_disk_encryption" {
 }
 
 variable "enabled_for_template_deployment" {
-  description = "Permitir Azure Resource Manager obtener secrets"
+  description = "Permitir Azure Resource Manager obtener secrets durante deployment"
   type        = bool
   default     = false
 }
@@ -90,6 +90,15 @@ variable "network_acls" {
     default_action = "Allow"
     bypass         = "AzureServices"
   }
+}
+
+variable "secrets" {
+  description = "Lista de secretos a crear en Key Vault"
+  type = list(object({
+    name  = string
+    value = string
+  }))
+  default = []
 }
 
 variable "tags" {

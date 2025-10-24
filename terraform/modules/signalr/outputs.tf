@@ -28,3 +28,25 @@ output "primary_access_key" {
   value       = azurerm_signalr_service.this.primary_access_key
   sensitive   = true
 }
+
+output "secondary_connection_string" {
+  description = "Secondary connection string"
+  value       = azurerm_signalr_service.this.secondary_connection_string
+  sensitive   = true
+}
+
+output "secondary_access_key" {
+  description = "Secondary access key"
+  value       = azurerm_signalr_service.this.secondary_access_key
+  sensitive   = true
+}
+
+output "public_port" {
+  description = "Puerto público del SignalR"
+  value       = azurerm_signalr_service.this.public_port
+}
+
+output "server_port" {
+  description = "Puerto del servidor"
+  value       = azurerm_signalr_service.this.server_port
+}

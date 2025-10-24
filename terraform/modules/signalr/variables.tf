@@ -23,7 +23,7 @@ variable "location" {
 }
 
 variable "sku" {
-  description = "SKU del SignalR Service"
+  description = "SKU del SignalR Service (Free_F1, Standard_S1, Premium_P1)"
   type        = string
   default     = "Free_F1"
   
@@ -59,6 +59,12 @@ variable "cors_allowed_origins" {
   description = "Lista de orígenes permitidos para CORS"
   type        = list(string)
   default     = ["*"]
+}
+
+variable "public_network_access_enabled" {
+  description = "Habilitar acceso público"
+  type        = bool
+  default     = true
 }
 
 variable "tags" {

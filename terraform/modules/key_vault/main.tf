@@ -13,7 +13,7 @@ resource "azurerm_key_vault" "this" {
   soft_delete_retention_days = var.soft_delete_retention_days
   purge_protection_enabled   = var.purge_protection_enabled
   
-  # RBAC vs Access Policies
+  # RBAC Authorization (recomendado sobre Access Policies)
   enable_rbac_authorization = var.enable_rbac_authorization
   
   # Permisos para servicios de Azure
@@ -32,5 +32,27 @@ resource "azurerm_key_vault" "this" {
   
   lifecycle {
     prevent_destroy = false  # Cambiar a true en producción
+  }
+}
+
+# ============================================
+# Key Vault Secrets (Opcional)
+# ============================================
+# NOTA: Para crear secretos con RBAC, necesitas el role assignment primero
+# Esto es solo un ejemplo básico. En producción, usa RBAC roles.
+
+resource "azurerm_key_vault_secret" "this" {
+  for_each = { for s in var.secrets : s.name => s }
+  
+  name         = each.value.name
+  value        = each.value.value
+  key_vault_id = azurerm_key_vault.this.id
+  
+  tags = var.tags
+  
+  depends_on = [azurerm_key_vault.this]
+  
+  lifecycle {
+    ignore_changes = [value]  # No actualizar si el valor cambia fuera de Terraform
   }
 }

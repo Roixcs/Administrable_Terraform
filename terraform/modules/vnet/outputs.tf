@@ -1,27 +1,29 @@
-# Virtual Network Outputs
+# ============================================
+# VNet Module - Outputs
+# ============================================
+
 output "vnet_id" {
   description = "ID de la Virtual Network"
-  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].id : null
+  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].id : data.azurerm_virtual_network.existing[0].id
 }
 
 output "vnet_name" {
   description = "Nombre de la Virtual Network"
-  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].name : var.vnet_name
+  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].name : data.azurerm_virtual_network.existing[0].name
 }
 
 output "vnet_address_space" {
-  description = "Espacio de direcciones de la Virtual Network"
-  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].address_space : []
+  description = "Espacio de direcciones de la VNet"
+  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].address_space : data.azurerm_virtual_network.existing[0].address_space
 }
 
 output "vnet_location" {
   description = "Ubicación de la Virtual Network"
-  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].location : null
+  value       = var.create_vnet ? azurerm_virtual_network.vnet[0].location : data.azurerm_virtual_network.existing[0].location
 }
 
-# Subnets Outputs
 output "subnet_ids" {
-  description = "Mapa de IDs de las subnets"
+  description = "Mapa de IDs de las subnets creadas"
   value = {
     for key, subnet in azurerm_subnet.subnets : key => subnet.id
   }
@@ -41,15 +43,13 @@ output "subnet_address_prefixes" {
   }
 }
 
-# Complete Network Configuration Output
 output "network_configuration" {
-  description = "Configuración completa de la red (para referencia)"
-  value = var.create_vnet ? {
+  description = "Configuración completa de la red"
+  value = {
     vnet = {
-      id            = azurerm_virtual_network.vnet[0].id
-      name          = azurerm_virtual_network.vnet[0].name
-      address_space = azurerm_virtual_network.vnet[0].address_space
-      location      = azurerm_virtual_network.vnet[0].location
+      id            = var.create_vnet ? azurerm_virtual_network.vnet[0].id : data.azurerm_virtual_network.existing[0].id
+      name          = var.create_vnet ? azurerm_virtual_network.vnet[0].name : data.azurerm_virtual_network.existing[0].name
+      address_space = var.create_vnet ? azurerm_virtual_network.vnet[0].address_space : data.azurerm_virtual_network.existing[0].address_space
     }
     subnets = {
       for key, subnet in azurerm_subnet.subnets : key => {
@@ -58,5 +58,5 @@ output "network_configuration" {
         address_prefixes = subnet.address_prefixes
       }
     }
-  } : null
+  }
 }

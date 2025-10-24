@@ -358,3 +358,525 @@ functions_windows = [
     identity_type = "SystemAssigned"
   }
 ]
+
+
+
+# ============================================
+# Cosmos DB Configuration Examples
+# ============================================
+
+# ============================================
+# ESCENARIO 1: Cosmos DB Público (Development)
+# ============================================
+# ============================================
+# Cosmos DB
+# ============================================
+
+cosmos_db = {
+  create            = true
+  account_name      = "cosmos-testclient-dev"
+  database_name     = "testclient-db"
+  enable_serverless = true
+  consistency_level = "Session"
+  
+  containers = [
+    {
+      name           = "orders"
+      partition_keys = ["/customerId"]
+      throughput     = null
+      default_ttl    = -1
+    },
+    {
+      name           = "customers"
+      partition_keys = ["/id"]
+      throughput     = null
+      default_ttl    = 86400  # 24 horas
+    }
+  ]
+  
+  # Network: Público sin restricciones (desarrollo)
+  public_network_access_enabled = true
+  ip_range_filter              = []
+  virtual_network_rules        = []
+  enable_private_endpoint      = false
+}
+
+# ============================================
+# ESCENARIO 2: Cosmos DB con IP Firewall (Staging)
+# ============================================
+cosmos_db = {
+  create            = true
+  account_name      = "cosmos-testclient-uat"
+  database_name     = "testclient-db"
+  enable_serverless = true
+  consistency_level = "Session"
+  
+  containers = [
+    {
+      name           = "orders"
+      partition_keys = ["/customerId"]
+    },
+    {
+      name           = "products"
+      partition_keys = ["/categoryId"]
+      default_ttl    = 2592000  # 30 días
+    }
+  ]
+  
+  # Network: Acceso público con firewall IP
+  public_network_access_enabled = true
+  ip_range_filter = [
+    "40.76.54.131",           # IP de oficina
+    "52.176.6.30/32",         # Azure DevOps IP
+    "104.42.195.92/27"        # Rango de IPs corporativas
+  ]
+  virtual_network_rules     = []
+  enable_private_endpoint   = false
+}
+
+# ============================================
+# ESCENARIO 3: Cosmos DB con VNet Integration (Production - Basic)
+# ============================================
+cosmos_db = {
+  create            = true
+  account_name      = "cosmos-testclient-prd"
+  database_name     = "testclient-db"
+  enable_serverless = true
+  consistency_level = "Session"
+  
+  containers = [
+    {
+      name           = "orders"
+      partition_keys = ["/customerId"]
+    },
+    {
+      name           = "customers"
+      partition_keys = ["/id"]
+    },
+    {
+      name           = "transactions"
+      partition_keys = ["/orderId"]
+      default_ttl    = 7776000  # 90 días
+    }
+  ]
+  
+  # Network: Solo acceso desde VNet específica
+  public_network_access_enabled = true  # Debe estar en true para VNet rules
+  ip_range_filter              = []
+  virtual_network_rules = [
+    {
+      subnet_id                = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-data"
+      ignore_missing_endpoint = false
+    },
+    {
+      subnet_id                = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-functions"
+      ignore_missing_endpoint = false
+    }
+  ]
+  enable_private_endpoint = false
+}
+
+# ============================================
+# ESCENARIO 4: Cosmos DB con Private Endpoint (Production - Full Security)
+# ============================================
+cosmos_db = {
+  create            = true
+  account_name      = "cosmos-testclient-prd"
+  database_name     = "testclient-db"
+  enable_serverless = true
+  consistency_level = "Strong"  # Mayor consistencia para producción crítica
+  
+  containers = [
+    {
+      name           = "orders"
+      partition_keys = ["/customerId"]
+    },
+    {
+      name           = "customers"
+      partition_keys = ["/id"]
+    },
+    {
+      name           = "audit_logs"
+      partition_keys = ["/timestamp"]
+      default_ttl    = 31536000  # 1 año
+    }
+  ]
+  
+  # Network: Private Endpoint (máxima seguridad)
+  public_network_access_enabled = false  # Sin acceso público
+  ip_range_filter              = []
+  virtual_network_rules        = []
+  enable_private_endpoint      = true
+  private_endpoint_subnet_id   = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-private-endpoints"
+  private_endpoint_name        = "cosmos-testclient-prd-pe"
+}
+
+# ============================================
+# ESCENARIO 5: Cosmos DB Híbrido (VNet + IP Firewall)
+# ============================================
+cosmos_db = {
+  create            = true
+  account_name      = "cosmos-testclient-hybrid"
+  database_name     = "testclient-db"
+  enable_serverless = true
+  consistency_level = "Session"
+  
+  containers = [
+    {
+      name           = "orders"
+      partition_keys = ["/customerId"]
+    }
+  ]
+  
+  # Network: Acceso desde VNet Y IPs específicas
+  public_network_access_enabled = true
+  ip_range_filter = [
+    "40.76.54.131"  # IP de oficina para acceso de emergencia
+  ]
+  virtual_network_rules = [
+    {
+      subnet_id                = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-data"
+      ignore_missing_endpoint = false
+    }
+  ]
+  enable_private_endpoint = false
+}
+
+# ============================================
+# NOTAS IMPORTANTES SOBRE NETWORKING
+# ============================================
+
+# 1. IP FIREWALL (ip_range_filter):
+#    - Formato: ["10.0.0.0/24", "20.30.40.50"]
+#    - Soporta CIDR y IPs individuales
+#    - Se concatenan con comas en Cosmos DB
+#    - Útil para oficinas, Azure DevOps, etc.
+
+# 2. VIRTUAL NETWORK RULES:
+#    - Requiere public_network_access_enabled = true
+#    - La subnet DEBE tener Service Endpoint "Microsoft.AzureCosmosDB"
+#    - ignore_missing_endpoint = false falla si el endpoint no existe
+#    - ignore_missing_endpoint = true permite creación antes del endpoint
+
+# 3. PRIVATE ENDPOINT:
+#    - Máxima seguridad (sin acceso público)
+#    - Crea automáticamente Private DNS Zone
+#    - Solo accesible desde dentro de la VNet
+#    - Recomendado para producción crítica
+
+# 4. COMBINACIONES COMUNES:
+#    - Dev: public_network_access = true, sin restricciones
+#    - UAT: public_network_access = true + ip_range_filter
+#    - Prod Básico: public_network_access = true + virtual_network_rules
+#    - Prod Alto: public_network_access = false + private_endpoint
+
+# 5. SERVICE ENDPOINTS EN SUBNET:
+#    Para VNet rules, la subnet debe tener:
+#    service_endpoints = ["Microsoft.AzureCosmosDB"]
+
+
+
+# ============================================
+# Key Vault
+# ============================================
+
+# Escenario 1: Básico (Development - sin secretos)
+key_vault = {
+  create                     = true
+  name                       = "kv-testclient-dev"
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = false
+  enable_rbac_authorization  = true
+  
+  # Permisos Azure
+  enabled_for_deployment          = false
+  enabled_for_disk_encryption     = false
+  enabled_for_template_deployment = false
+  
+  # Network: Abierto para desarrollo
+  network_acls = {
+    default_action = "Allow"
+    bypass         = "AzureServices"
+    ip_rules       = []
+  }
+  
+  # Sin secretos (se crean manualmente o vía pipeline)
+  secrets = []
+}
+
+# Escenario 2: Con secretos iniciales
+key_vault = {
+  create                     = true
+  name                       = "kv-testclient-dev"
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = false
+  enable_rbac_authorization  = true
+  
+  enabled_for_deployment          = false
+  enabled_for_disk_encryption     = false
+  enabled_for_template_deployment = true  # Para ARM templates
+  
+  network_acls = {
+    default_action = "Allow"
+    bypass         = "AzureServices"
+    ip_rules       = []
+  }
+  
+  # Secretos iniciales (mejor usar Azure DevOps después)
+  secrets = [
+    {
+      name  = "CosmosDB-ConnectionString"
+      value = "AccountEndpoint=https://..."
+    },
+    {
+      name  = "ServiceBus-ConnectionString"
+      value = "Endpoint=sb://..."
+    }
+  ]
+}
+
+
+# ============================================
+# API Management
+# ============================================
+
+# Escenario 1: Consumption (Serverless)
+api_management = {
+  create          = true
+  name            = "apim-testclient-dev"
+  publisher_name  = "TestClient Dev Team"
+  publisher_email = "dev@testclient.com"
+  sku_name        = "Consumption_0"
+  
+  # VNet no soportado en Consumption
+  virtual_network_type          = "None"
+  virtual_network_configuration = null
+  public_ip_address_id          = null
+}
+
+# Escenario 2: Developer (para desarrollo con más features)
+api_management = {
+  create          = true
+  name            = "apim-testclient-dev"
+  publisher_name  = "TestClient"
+  publisher_email = "devops@testclient.com"
+  sku_name        = "Developer_1"
+  
+  # Sin VNet (acceso público)
+  virtual_network_type          = "None"
+  virtual_network_configuration = null
+  public_ip_address_id          = null
+}
+
+# Escenario 3: Developer con VNet External
+api_management = {
+  create          = true
+  name            = "apim-testclient-uat"
+  publisher_name  = "TestClient"
+  publisher_email = "devops@testclient.com"
+  sku_name        = "Developer_1"
+  
+  # VNet External (accesible desde internet pero dentro de VNet)
+  virtual_network_type = "External"
+  virtual_network_configuration = {
+    subnet_id = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-apim"
+  }
+  public_ip_address_id = null  # Se crea automáticamente
+}
+
+# Escenario 4: Standard con VNet Internal (Producción)
+api_management = {
+  create          = true
+  name            = "apim-testclient-prd"
+  publisher_name  = "TestClient Production"
+  publisher_email = "ops@testclient.com"
+  sku_name        = "Standard_1"
+  
+  # VNet Internal (solo accesible desde dentro de la VNet)
+  virtual_network_type = "Internal"
+  virtual_network_configuration = {
+    subnet_id = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-apim"
+  }
+  public_ip_address_id = null
+}
+
+# ============================================
+# Virtual Network
+# ============================================
+
+# ============================================
+# ESCENARIO 1: Crear VNet nueva con subnets básicas
+# ============================================
+vnet = {
+  create_vnet         = true
+  vnet_name           = "vnet-testclient-dev"
+  resource_group_name = null  # Usa el RG del proyecto
+  address_space       = ["10.180.0.0/16"]
+  dns_servers         = []
+  
+  subnets = {
+    subnet_general = {
+      name             = "subnet-general"
+      address_prefixes = ["10.180.1.0/24"]
+      service_endpoints = []
+    }
+    
+    subnet_data = {
+      name             = "subnet-data"
+      address_prefixes = ["10.180.2.0/24"]
+      service_endpoints = [
+        "Microsoft.AzureCosmosDB",
+        "Microsoft.Storage",
+        "Microsoft.Sql"
+      ]
+    }
+  }
+}
+
+# ============================================
+# ESCENARIO 2: Solo crear subnets en VNet existente
+# ============================================
+vnet = {
+  create_vnet         = false
+  vnet_name           = "vnet-shared-prod"  # VNet existente
+  resource_group_name = "rg-networking-prod"  # RG donde está la VNet
+  address_space       = []  # No aplica
+  dns_servers         = []  # No aplica
+  
+  subnets = {
+    subnet_functions = {
+      name             = "subnet-testclient-functions"
+      address_prefixes = ["10.100.5.0/24"]
+      service_endpoints = [
+        "Microsoft.Storage",
+        "Microsoft.KeyVault",
+        "Microsoft.ServiceBus"
+      ]
+      
+      # Delegación para Azure Functions
+      delegation = {
+        name = "delegation-functions"
+        service_delegation = {
+          name = "Microsoft.Web/serverFarms"
+          actions = [
+            "Microsoft.Network/virtualNetworks/subnets/action"
+          ]
+        }
+      }
+      
+      private_endpoint_network_policies_enabled = false
+    }
+    
+    subnet_apim = {
+      name             = "subnet-testclient-apim"
+      address_prefixes = ["10.100.6.0/27"]
+      service_endpoints = []
+    }
+  }
+}
+
+# ============================================
+# ESCENARIO 3: VNet nueva para proyecto específico
+# ============================================
+vnet = {
+  create_vnet         = true
+  vnet_name           = "vnet-testclient-prd"
+  resource_group_name = null
+  address_space       = ["10.180.24.0/23"]
+  dns_servers         = []
+  
+  subnets = {
+    subnet_frontend = {
+      name             = "subnet-frontend"
+      address_prefixes = ["10.180.24.0/28"]
+      service_endpoints = []
+    }
+    
+    subnet_backend = {
+      name             = "subnet-backend"
+      address_prefixes = ["10.180.24.16/28"]
+      service_endpoints = [
+        "Microsoft.Storage",
+        "Microsoft.AzureCosmosDB"
+      ]
+    }
+    
+    subnet_functions = {
+      name             = "subnet-functions"
+      address_prefixes = ["10.180.24.32/27"]
+      service_endpoints = [
+        "Microsoft.Storage",
+        "Microsoft.KeyVault",
+        "Microsoft.ServiceBus"
+      ]
+      
+      delegation = {
+        name = "delegation-functions"
+        service_delegation = {
+          name = "Microsoft.Web/serverFarms"
+          actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+        }
+      }
+    }
+    
+    subnet_private_endpoints = {
+      name             = "subnet-private-endpoints"
+      address_prefixes = ["10.180.24.64/27"]
+      service_endpoints = []
+      private_endpoint_network_policies_enabled = false
+    }
+    
+    subnet_apim = {
+      name             = "subnet-apim"
+      address_prefixes = ["10.180.24.96/28"]
+      service_endpoints = []
+    }
+  }
+}
+
+# ============================================
+# ESCENARIO 4: Solo agregar una subnet a VNet existente
+# ============================================
+vnet = {
+  create_vnet         = false
+  vnet_name           = "vnet-corporate"
+  resource_group_name = "rg-networking"
+  address_space       = []
+  dns_servers         = []
+  
+  subnets = {
+    subnet_cosmos_pe = {
+      name             = "subnet-testclient-cosmosdb-pe"
+      address_prefixes = ["10.50.10.0/28"]
+      service_endpoints = []
+      private_endpoint_network_policies_enabled = false
+    }
+  }
+}
+```
+
+---
+
+## 📊 Service Endpoints Comunes
+
+| Servicio | Service Endpoint | Cuándo usar |
+|----------|------------------|-------------|
+| **Cosmos DB** | `Microsoft.AzureCosmosDB` | Para VNet rules en Cosmos |
+| **Storage** | `Microsoft.Storage` | Para Storage Account firewall |
+| **SQL** | `Microsoft.Sql` | Para Azure SQL VNet rules |
+| **Key Vault** | `Microsoft.KeyVault` | Para Key Vault network rules |
+| **Service Bus** | `Microsoft.ServiceBus` | Para Service Bus VNet rules |
+| **Event Hub** | `Microsoft.EventHub` | Para Event Hub VNet rules |
+
+## 🔧 Delegaciones Comunes
+
+| Servicio | Delegation Name | Actions |
+|----------|----------------|---------|
+| **Azure Functions** | `Microsoft.Web/serverFarms` | `Microsoft.Network/virtualNetworks/subnets/action` |
+| **App Services** | `Microsoft.Web/serverFarms` | `Microsoft.Network/virtualNetworks/subnets/action` |
+| **Container Instances** | `Microsoft.ContainerInstance/containerGroups` | Varias |
+| **SQL Managed Instance** | `Microsoft.Sql/managedInstances` | Varias |
+
+---

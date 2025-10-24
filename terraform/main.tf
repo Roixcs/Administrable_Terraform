@@ -91,19 +91,19 @@ module "log_analytics" {
 # VNET
 # ============================================
 
-module "vnet" {
-  source              = "./modules/vnet"
-  create_vnet         = var.vnet.create
-  vnet_name           = var.vnet.name
-  address_space       = var.vnet.address_space
-  dns_servers         = var.vnet.dns_servers
-  subnets             = var.vnet.subnets
-  resource_group_name = local.rg_name
-  location            = var.location
-  tags                = local.common_tags
+# module "vnet" {
+#   source              = "./modules/vnet"
+#   create_vnet         = var.vnet.create
+#   vnet_name           = var.vnet.name
+#   address_space       = var.vnet.address_space
+#   dns_servers         = var.vnet.dns_servers
+#   subnets             = var.vnet.subnets
+#   resource_group_name = local.rg_name
+#   location            = var.location
+#   tags                = local.common_tags
   
-  depends_on = [module.resource_group]
-}
+#   depends_on = [module.resource_group]
+# }
 
 
 # ============================================
@@ -170,42 +170,42 @@ module "vnet" {
 # Cosmos DB
 # ============================================
 
-module "cosmos_db" {
-  count  = var.cosmos_db.create ? 1 : 0
-  source = "./modules/cosmos_db"
+# module "cosmos_db" {
+#   count  = var.cosmos_db.create ? 1 : 0
+#   source = "./modules/cosmos_db"
   
-  account_name        = var.cosmos_db.account_name
-  resource_group_name = local.rg_name
-  location            = var.location
-  database_name       = var.cosmos_db.database_name
-  enable_serverless   = var.cosmos_db.enable_serverless
-  consistency_level   = var.cosmos_db.consistency_level
-  containers          = var.cosmos_db.containers
-  tags                = local.common_tags
+#   account_name        = var.cosmos_db.account_name
+#   resource_group_name = local.rg_name
+#   location            = var.location
+#   database_name       = var.cosmos_db.database_name
+#   enable_serverless   = var.cosmos_db.enable_serverless
+#   consistency_level   = var.cosmos_db.consistency_level
+#   containers          = var.cosmos_db.containers
+#   tags                = local.common_tags
   
-  depends_on = [module.resource_group]
-}
+#   depends_on = [module.resource_group]
+# }
 
 # ============================================
 # Key Vault
 # ============================================
 
-module "key_vault" {
-  count  = var.key_vault.create ? 1 : 0
-  source = "./modules/key_vault"
+# module "key_vault" {
+#   count  = var.key_vault.create ? 1 : 0
+#   source = "./modules/key_vault"
   
-  name                       = var.key_vault.name
-  resource_group_name        = local.rg_name
-  location                   = var.location
-  tenant_id                  = var.tenant_id
-  sku_name                   = var.key_vault.sku_name
-  soft_delete_retention_days = var.key_vault.soft_delete_retention_days
-  purge_protection_enabled   = var.key_vault.purge_protection_enabled
-  enable_rbac_authorization  = var.key_vault.enable_rbac_authorization
-  tags                       = local.common_tags
+#   name                       = var.key_vault.name
+#   resource_group_name        = local.rg_name
+#   location                   = var.location
+#   tenant_id                  = var.tenant_id
+#   sku_name                   = var.key_vault.sku_name
+#   soft_delete_retention_days = var.key_vault.soft_delete_retention_days
+#   purge_protection_enabled   = var.key_vault.purge_protection_enabled
+#   enable_rbac_authorization  = var.key_vault.enable_rbac_authorization
+#   tags                       = local.common_tags
   
-  depends_on = [module.resource_group]
-}
+#   depends_on = [module.resource_group]
+# }
 
 # ============================================
 # API Management
@@ -230,20 +230,20 @@ module "api_management" {
 # SignalR Service
 # ============================================
 
-module "signalr" {
-  count  = var.signalr.create ? 1 : 0
-  source = "./modules/signalr"
+# module "signalr" {
+#   count  = var.signalr.create ? 1 : 0
+#   source = "./modules/signalr"
   
-  name                = var.signalr.name
-  resource_group_name = local.rg_name
-  location            = var.location
-  sku                 = var.signalr.sku
-  capacity            = var.signalr.capacity
-  service_mode        = var.signalr.service_mode
-  tags                = local.common_tags
+#   name                = var.signalr.name
+#   resource_group_name = local.rg_name
+#   location            = var.location
+#   sku                 = var.signalr.sku
+#   capacity            = var.signalr.capacity
+#   service_mode        = var.signalr.service_mode
+#   tags                = local.common_tags
   
-  depends_on = [module.resource_group]
-}
+#   depends_on = [module.resource_group]
+# }
 
 
 # ============================================
@@ -382,5 +382,140 @@ module "storage_accounts" {
   
   depends_on = [module.resource_group]
 }
+
+
+# ============================================
+# Cosmos DB
+# ============================================
+
+module "cosmos_db" {
+  count  = var.cosmos_db.create ? 1 : 0
+  source = "./modules/cosmos_db"
+  
+  account_name        = var.cosmos_db.account_name
+  resource_group_name = local.rg_name
+  location            = var.location
+  database_name       = var.cosmos_db.database_name
+  enable_serverless   = var.cosmos_db.enable_serverless
+  consistency_level   = var.cosmos_db.consistency_level
+  containers          = var.cosmos_db.containers
+  
+  # Network Configuration
+  public_network_access_enabled = var.cosmos_db.public_network_access_enabled
+  ip_range_filter              = var.cosmos_db.ip_range_filter
+  virtual_network_rules        = var.cosmos_db.virtual_network_rules
+  enable_private_endpoint      = var.cosmos_db.enable_private_endpoint
+  private_endpoint_subnet_id   = var.cosmos_db.private_endpoint_subnet_id
+  
+  tags = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+
+# ============================================
+# Key Vault
+# ============================================
+
+# ============================================
+# Key Vault
+# ============================================
+module "key_vault" {
+  count  = var.key_vault.create ? 1 : 0
+  source = "./modules/key_vault"
+  
+  name                       = var.key_vault.name
+  resource_group_name        = local.rg_name
+  location                   = var.location
+  tenant_id                  = var.tenant_id
+  sku_name                   = var.key_vault.sku_name
+  soft_delete_retention_days = var.key_vault.soft_delete_retention_days
+  purge_protection_enabled   = var.key_vault.purge_protection_enabled
+  enable_rbac_authorization  = var.key_vault.enable_rbac_authorization
+  
+  # Permisos para servicios Azure
+  enabled_for_deployment          = var.key_vault.enabled_for_deployment
+  enabled_for_disk_encryption     = var.key_vault.enabled_for_disk_encryption
+  enabled_for_template_deployment = var.key_vault.enabled_for_template_deployment
+  
+  # Network ACLs
+  network_acls = var.key_vault.network_acls
+  
+  # Secretos (opcional)
+  secrets = var.key_vault.secrets
+  
+  tags = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+# ============================================
+# API Management
+# ============================================
+
+module "api_management" {
+  count  = var.api_management.create ? 1 : 0
+  source = "./modules/api_management"
+  
+  name                = var.api_management.name
+  resource_group_name = local.rg_name
+  location            = var.location
+  publisher_name      = var.api_management.publisher_name
+  publisher_email     = var.api_management.publisher_email
+  sku_name            = var.api_management.sku_name
+  
+  # VNet Configuration
+  virtual_network_type          = var.api_management.virtual_network_type
+  virtual_network_configuration = var.api_management.virtual_network_configuration
+  public_ip_address_id          = var.api_management.public_ip_address_id
+  
+  tags = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+# ============================================
+# SignalR Service
+# ============================================
+
+module "signalr" {
+  count  = var.signalr.create ? 1 : 0
+  source = "./modules/signalr"
+  
+  name                          = var.signalr.name
+  resource_group_name           = local.rg_name
+  location                      = var.location
+  sku                           = var.signalr.sku
+  capacity                      = var.signalr.capacity
+  service_mode                  = var.signalr.service_mode
+  cors_allowed_origins          = var.signalr.cors_allowed_origins
+  public_network_access_enabled = var.signalr.public_network_access_enabled
+  
+  tags = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
+
+# ============================================
+# Virtual Network
+# ============================================
+
+module "vnet" {
+  source = "./modules/vnet"
+  
+  create_vnet         = var.vnet.create_vnet
+  vnet_name           = var.vnet.vnet_name
+  resource_group_name = coalesce(var.vnet.resource_group_name, local.rg_name)
+  location            = var.location
+  address_space       = var.vnet.address_space
+  dns_servers         = var.vnet.dns_servers
+  subnets             = var.vnet.subnets
+  
+  tags = local.common_tags
+  
+  depends_on = [module.resource_group]
+}
+
 
 

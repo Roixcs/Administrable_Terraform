@@ -23,58 +23,42 @@ output "primary_key" {
   sensitive   = true
 }
 
-output "secondary_key" {
-  description = "Secondary key de Cosmos DB"
-  value       = azurerm_cosmosdb_account.this.secondary_key
-  sensitive   = true
-}
-
-output "primary_readonly_key" {
-  description = "Primary readonly key de Cosmos DB"
-  value       = azurerm_cosmosdb_account.this.primary_readonly_key
-  sensitive   = true
-}
-
-output "connection_strings" {
-  description = "Connection strings de Cosmos DB"
-  value       = azurerm_cosmosdb_account.this.connection_strings
-  sensitive   = true
-}
-
 output "primary_connection_string" {
   description = "Primary connection string de Cosmos DB"
   value       = "AccountEndpoint=${azurerm_cosmosdb_account.this.endpoint};AccountKey=${azurerm_cosmosdb_account.this.primary_key};"
   sensitive   = true
 }
 
-output "databases" {
-  description = "Databases creadas"
-  value = {
-    for name, db in azurerm_cosmosdb_sql_database.this : name => {
-      id   = db.id
-      name = db.name
-    }
-  }
+output "database_name" {
+  description = "Nombre de la database"
+  value       = azurerm_cosmosdb_sql_database.this.name
 }
 
 output "containers" {
-  description = "Containers creados por database"
+  description = "Containers creados"
   value = {
-    for key, container in azurerm_cosmosdb_sql_container.this : key => {
-      id              = container.id
-      name            = container.name
-      partition_keys  = container.partition_key_paths
-      default_ttl     = container.default_ttl
+    for name, container in azurerm_cosmosdb_sql_container.this : name => {
+      id   = container.id
+      name = container.name
     }
   }
 }
 
-output "stored_procedures" {
-  description = "Stored Procedures creados"
-  value = {
-    for key, sp in azurerm_cosmosdb_sql_stored_procedure.this : key => {
-      id   = sp.id
-      name = sp.name
-    }
-  }
+# ============================================
+# Network Configuration Outputs
+# ============================================
+
+output "public_network_access_enabled" {
+  description = "Estado del acceso público"
+  value       = azurerm_cosmosdb_account.this.public_network_access_enabled
+}
+
+output "private_endpoint_id" {
+  description = "ID del Private Endpoint (si está habilitado)"
+  value       = var.enable_private_endpoint ? azurerm_private_endpoint.cosmos[0].id : null
+}
+
+output "private_endpoint_ip" {
+  description = "IP privada del Private Endpoint (si está habilitado)"
+  value       = var.enable_private_endpoint ? azurerm_private_endpoint.cosmos[0].private_service_connection[0].private_ip_address : null
 }

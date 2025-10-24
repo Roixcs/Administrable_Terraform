@@ -36,3 +36,13 @@ output "developer_portal_url" {
   description = "Developer Portal URL"
   value       = azurerm_api_management.this.developer_portal_url
 }
+
+output "public_ip_addresses" {
+  description = "Public IP addresses del API Management"
+  value       = azurerm_api_management.this.public_ip_addresses
+}
+
+output "private_ip_addresses" {
+  description = "Private IP addresses del API Management (si aplica)"
+  value       = azurerm_api_management.this.private_ip_addresses
+}
