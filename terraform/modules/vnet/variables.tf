@@ -27,7 +27,7 @@ variable "address_space" {
   description = "Espacio de direcciones para la VNet (solo si create_vnet = true)"
   type        = list(string)
   default     = []
-  
+
   validation {
     condition = alltrue([
       for cidr in var.address_space : can(regex("^([0-9]{1,3}\\.){3}[0-9]{1,3}\\/[0-9]{1,2}$", cidr))
@@ -47,10 +47,10 @@ variable "subnets" {
   type = map(object({
     name             = string
     address_prefixes = list(string)
-    
+
     # Service Endpoints
     service_endpoints = optional(list(string), [])
-    
+
     # Delegación (para Azure Functions, App Services, etc.)
     delegation = optional(object({
       name = string
@@ -59,7 +59,7 @@ variable "subnets" {
         actions = optional(list(string), [])
       })
     }))
-    
+
     # Private Endpoint Policies
     private_endpoint_network_policies_enabled     = optional(bool, true)
     private_link_service_network_policies_enabled = optional(bool, true)

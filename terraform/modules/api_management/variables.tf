@@ -5,7 +5,7 @@
 variable "name" {
   description = "Nombre del API Management"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-zA-Z](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$", var.name))
     error_message = "El nombre debe empezar con letra y solo contener letras, números y guiones."
@@ -30,7 +30,7 @@ variable "publisher_name" {
 variable "publisher_email" {
   description = "Email del publisher"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.publisher_email))
     error_message = "Debe ser un email válido."
@@ -41,9 +41,9 @@ variable "sku_name" {
   description = "SKU del API Management (Consumption_0, Developer_1, Basic_1, Standard_1, Premium_1)"
   type        = string
   default     = "Consumption_0"
-  
+
   validation {
-    condition = can(regex("^(Consumption_0|Developer_1|Basic_[12]|Standard_[124]|Premium_[1-9][0-9]*)$", var.sku_name))
+    condition     = can(regex("^(Consumption_0|Developer_1|Basic_[12]|Standard_[124]|Premium_[1-9][0-9]*)$", var.sku_name))
     error_message = "SKU inválido. Usa: Consumption_0, Developer_1, Basic_1-2, Standard_1/2/4, Premium_1+."
   }
 }
@@ -52,7 +52,7 @@ variable "virtual_network_type" {
   description = "Tipo de integración con VNet (None, External, Internal)"
   type        = string
   default     = "None"
-  
+
   validation {
     condition     = contains(["None", "External", "Internal"], var.virtual_network_type)
     error_message = "virtual_network_type debe ser: None, External o Internal."

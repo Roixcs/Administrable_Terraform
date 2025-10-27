@@ -5,7 +5,7 @@
 variable "account_name" {
   description = "Nombre de la cuenta de Cosmos DB"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-z0-9-]{3,44}$", var.account_name))
     error_message = "El nombre debe tener 3-44 caracteres, solo letras minúsculas, números y guiones."
@@ -37,7 +37,7 @@ variable "kind" {
   description = "Tipo de cuenta (GlobalDocumentDB, MongoDB, Parse)"
   type        = string
   default     = "GlobalDocumentDB"
-  
+
   validation {
     condition     = contains(["GlobalDocumentDB", "MongoDB", "Parse"], var.kind)
     error_message = "kind debe ser: GlobalDocumentDB, MongoDB o Parse."
@@ -48,7 +48,7 @@ variable "consistency_level" {
   description = "Nivel de consistencia (BoundedStaleness, Eventual, Session, Strong, ConsistentPrefix)"
   type        = string
   default     = "Session"
-  
+
   validation {
     condition     = contains(["BoundedStaleness", "Eventual", "Session", "Strong", "ConsistentPrefix"], var.consistency_level)
     error_message = "consistency_level inválido."
@@ -72,8 +72,8 @@ variable "containers" {
   type = list(object({
     name           = string
     partition_keys = list(string)
-    throughput     = optional(number, null)  # null para serverless
-    default_ttl    = optional(number, -1)    # -1 = sin TTL
+    throughput     = optional(number, null) # null para serverless
+    default_ttl    = optional(number, -1)   # -1 = sin TTL
   }))
   default = []
 }
@@ -103,7 +103,7 @@ variable "ip_range_filter" {
 variable "virtual_network_rules" {
   description = "Reglas de Virtual Network para acceso a Cosmos DB"
   type = list(object({
-    subnet_id                = string
+    subnet_id               = string
     ignore_missing_endpoint = optional(bool, false)
   }))
   default = []

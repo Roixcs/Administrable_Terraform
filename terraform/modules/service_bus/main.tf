@@ -9,35 +9,35 @@ resource "azurerm_servicebus_namespace" "this" {
   location            = var.location
   resource_group_name = var.resource_group_name
   sku                 = var.sku
-  
+
   tags = var.tags
-  
+
   lifecycle {
-    prevent_destroy = false  # Cambiar a true en producción
+    prevent_destroy = false # Cambiar a true en producción
   }
 }
 
 # Queues - SIN enable_batched_operations
 resource "azurerm_servicebus_queue" "this" {
   for_each = { for q in var.queues : q.name => q }
-  
+
   name         = each.value.name
   namespace_id = azurerm_servicebus_namespace.this.id
-  
-  max_size_in_megabytes                       = each.value.max_size_in_megabytes
-  dead_lettering_on_message_expiration        = each.value.enable_dead_lettering_on_message_expiration
-  max_delivery_count                          = each.value.max_delivery_count
-  duplicate_detection_history_time_window     = each.value.duplicate_detection_history_time_window
-  status                                      = each.value.enabled ? "Active" : "Disabled"
+
+  max_size_in_megabytes                   = each.value.max_size_in_megabytes
+  dead_lettering_on_message_expiration    = each.value.enable_dead_lettering_on_message_expiration
+  max_delivery_count                      = each.value.max_delivery_count
+  duplicate_detection_history_time_window = each.value.duplicate_detection_history_time_window
+  status                                  = each.value.enabled ? "Active" : "Disabled"
 }
 
 # Topics - SIN enable_batched_operations
 resource "azurerm_servicebus_topic" "this" {
   for_each = { for t in var.topics : t.name => t }
-  
+
   name         = each.value.name
   namespace_id = azurerm_servicebus_namespace.this.id
-  
+
   max_size_in_megabytes                   = each.value.max_size_in_megabytes
   duplicate_detection_history_time_window = each.value.duplicate_detection_history_time_window
   status                                  = each.value.enabled ? "Active" : "Disabled"
@@ -57,10 +57,10 @@ resource "azurerm_servicebus_subscription" "this" {
       }
     }
   ]...)
-  
-  name               = each.value.subscription_name
-  topic_id           = azurerm_servicebus_topic.this[each.value.topic_name].id
-  max_delivery_count = each.value.max_delivery_count
+
+  name                                 = each.value.subscription_name
+  topic_id                             = azurerm_servicebus_topic.this[each.value.topic_name].id
+  max_delivery_count                   = each.value.max_delivery_count
   dead_lettering_on_message_expiration = each.value.enable_dead_lettering_on_message_expiration
-  status             = each.value.enabled ? "Active" : "Disabled"  # ← Control de estado
+  status                               = each.value.enabled ? "Active" : "Disabled" # ← Control de estado
 }

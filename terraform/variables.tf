@@ -9,7 +9,7 @@
 variable "project_name" {
   description = "Nombre del proyecto/cliente"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-z0-9-]+$", var.project_name))
     error_message = "project_name solo puede contener letras minúsculas, números y guiones."
@@ -19,7 +19,7 @@ variable "project_name" {
 variable "environment" {
   description = "Ambiente (dev, uat, prd)"
   type        = string
-  
+
   validation {
     condition     = contains(["dev", "uat", "prd"], var.environment)
     error_message = "environment debe ser: dev, uat o prd."
@@ -76,7 +76,7 @@ variable "resource_group" {
     create = bool
     name   = string
   })
-  
+
   validation {
     condition     = var.resource_group.name != ""
     error_message = "El nombre del Resource Group no puede estar vacío."
@@ -96,7 +96,7 @@ variable "resource_group" {
 #     account_replication_type = optional(string, "LRS")
 #   }))
 #   default = {}
-  
+
 #   validation {
 #     condition = alltrue([
 #       for k, v in var.storage_accounts : contains(["static_website", "general"], v.storage_type)
@@ -228,20 +228,20 @@ variable "application_insights" {
 # SignalR Service
 # ============================================
 
-variable "signalr" {
-  description = "Configuración de SignalR Service"
-  type = object({
-    create       = bool
-    name         = string
-    sku          = optional(string, "Free_F1")
-    capacity     = optional(number, 1)
-    service_mode = optional(string, "Default")
-  })
-  default = {
-    create = false
-    name   = ""
-  }
-}
+# variable "signalr" {
+#   description = "Configuración de SignalR Service"
+#   type = object({
+#     create       = bool
+#     name         = string
+#     sku          = optional(string, "Free_F1")
+#     capacity     = optional(number, 1)
+#     service_mode = optional(string, "Default")
+#   })
+#   default = {
+#     create = false
+#     name   = ""
+#   }
+# }
 
 # ============================================
 # VNET
@@ -313,22 +313,22 @@ variable "log_analytics" {
 #     name                     = string
 #     sku_name                 = optional(string, "Standard_AzureFrontDoor")
 #     response_timeout_seconds = optional(number, 120)
-    
+
 #     endpoints = optional(map(object({
 #       name    = string
 #       enabled = optional(bool, true)
 #     })), {})
-    
+
 #     origin_groups = optional(map(object({
 #       name                     = string
 #       session_affinity_enabled = optional(bool, false)
-      
+
 #       load_balancing = optional(object({
 #         additional_latency_in_milliseconds = optional(number, 50)
 #         sample_size                        = optional(number, 4)
 #         successful_samples_required        = optional(number, 3)
 #       }), {})
-      
+
 #       health_probe = optional(object({
 #         interval_in_seconds = number
 #         path                = optional(string, "/")
@@ -336,7 +336,7 @@ variable "log_analytics" {
 #         request_type        = optional(string, "HEAD")
 #       }))
 #     })), {})
-    
+
 #     origins = optional(map(object({
 #       name                           = string
 #       origin_group_key              = string
@@ -347,7 +347,7 @@ variable "log_analytics" {
 #       enabled                        = optional(bool, true)
 #       priority                       = optional(number, 1)
 #       weight                         = optional(number, 1000)
-      
+
 #       private_link = optional(object({
 #         request_message        = optional(string)
 #         target_type           = optional(string)
@@ -355,7 +355,7 @@ variable "log_analytics" {
 #         private_link_target_id = string
 #       }))
 #     })), {})
-    
+
 #     routes = optional(map(object({
 #       name                   = string
 #       endpoint_key           = string
@@ -367,21 +367,21 @@ variable "log_analytics" {
 #       https_redirect_enabled = optional(bool, true)
 #       enabled                = optional(bool, true)
 #       link_to_default_domain = optional(bool, true)
-      
+
 #       cache = optional(object({
 #         query_string_caching_behavior = optional(string, "IgnoreQueryString")
 #         query_strings                 = optional(list(string), [])
 #         compression_enabled           = optional(bool, true)
 #         content_types_to_compress     = optional(list(string), [])
 #       }))
-      
+
 #       custom_domains = optional(list(string), [])
 #     })), {})
-    
+
 #     custom_domains = optional(map(object({
 #       name      = string
 #       host_name = string
-      
+
 #       tls = optional(object({
 #         certificate_type    = optional(string, "ManagedCertificate")
 #         minimum_tls_version = optional(string, "TLS12")
@@ -391,7 +391,7 @@ variable "log_analytics" {
 #       })
 #     })), {})
 #   })
-  
+
 #   default = {
 #     create   = false
 #     name     = ""
@@ -410,7 +410,7 @@ variable "log_analytics" {
 #     plan_type   = string  # "FlexConsumption"
 #     create      = bool
 #     plan_name   = optional(string)
-    
+
 #     app_settings = optional(list(object({
 #       name        = string
 #       value       = string
@@ -424,44 +424,44 @@ variable "log_analytics" {
 # AZURE FUNCTIONS WINDOWS VARIABLES
 # ============================================
 
-variable "functions_windows" {
-  description = "Configuración de Azure Functions Windows"
-  type = list(object({
-    name        = string
-    plan_type   = string  # "consumption" o "basic"
-    create      = bool
-    plan_name   = optional(string)
-    
-    # Application Settings
-    app_settings = optional(list(object({
-      name         = string
-      value        = string
-      slot_setting = optional(bool, false)
-    })), [])
-    
-    # Site Config
-    always_on                     = optional(bool, false)
-    dotnet_version                = optional(string, "v8.0")
-    use_dotnet_isolated_runtime   = optional(bool, true)
-    
-    # VNet Integration
-    vnet_integration = optional(object({
-      subnet_id = string
-    }))
-    
-    # Identity
-    identity_type = optional(string, "SystemAssigned")
-    identity_ids  = optional(list(string), [])
-    
-    # Application Insights
-    application_insights_enabled = optional(bool, true)
-    
-    # Storage Account
-    storage_account_name          = optional(string)
-    storage_uses_managed_identity = optional(bool, false)
-  }))
-  default = []
-}
+# variable "functions_windows" {
+#   description = "Configuración de Azure Functions Windows"
+#   type = list(object({
+#     name        = string
+#     plan_type   = string  # "consumption" o "basic"
+#     create      = bool
+#     plan_name   = optional(string)
+
+#     # Application Settings
+#     app_settings = optional(list(object({
+#       name         = string
+#       value        = string
+#       slot_setting = optional(bool, false)
+#     })), [])
+
+#     # Site Config
+#     always_on                     = optional(bool, false)
+#     dotnet_version                = optional(string, "v8.0")
+#     use_dotnet_isolated_runtime   = optional(bool, true)
+
+#     # VNet Integration
+#     vnet_integration = optional(object({
+#       subnet_id = string
+#     }))
+
+#     # Identity
+#     identity_type = optional(string, "SystemAssigned")
+#     identity_ids  = optional(list(string), [])
+
+#     # Application Insights
+#     application_insights_enabled = optional(bool, true)
+
+#     # Storage Account
+#     storage_account_name          = optional(string)
+#     storage_uses_managed_identity = optional(bool, false)
+#   }))
+#   default = []
+# }
 
 # ============================================
 # LOG ANALYTICS - REUSE WORKSPACE
@@ -509,25 +509,25 @@ variable "functions_linux" {
 variable "functions_windows" {
   description = "Lista de Azure Functions Windows"
   type = list(object({
-    name        = string
-    enabled     = optional(bool, true)
-    plan_type   = string  # "consumption" o "basic"
-    plan_name   = optional(string)
-    
+    name      = string
+    enabled   = optional(bool, true)
+    plan_type = string # "consumption" o "basic"
+    plan_name = optional(string)
+
     app_settings = optional(list(object({
       name         = string
       value        = string
       slot_setting = optional(bool, false)
     })), [])
-    
-    always_on                     = optional(bool, false)
-    dotnet_version                = optional(string, "v8.0")
-    use_dotnet_isolated_runtime   = optional(bool, true)
-    
+
+    always_on                   = optional(bool, false)
+    dotnet_version              = optional(string, "v8.0")
+    use_dotnet_isolated_runtime = optional(bool, true)
+
     vnet_integration = optional(object({
       subnet_id = string
     }))
-    
+
     identity_type                 = optional(string, "SystemAssigned")
     identity_ids                  = optional(list(string), [])
     application_insights_enabled  = optional(bool, true)
@@ -580,24 +580,24 @@ variable "storage_accounts" {
   description = "Storage Accounts independientes (Static Website o V2 general)"
   type = list(object({
     name                     = string
-    storage_type             = string  # "static_website" o "general"
+    storage_type             = string # "static_website" o "general"
     account_tier             = optional(string, "Standard")
     account_replication_type = optional(string, "LRS")
     access_tier              = optional(string, "Hot")
-    
+
     enable_https_traffic_only = optional(bool, true)
     min_tls_version           = optional(string, "TLS1_2")
-    
+
     # Static Website
     index_document     = optional(string, "index.html")
     error_404_document = optional(string, "404.html")
-    
+
     # Containers
     containers = optional(list(object({
       name        = string
       access_type = optional(string, "private")
     })), [])
-    
+
     # Lifecycle Management
     lifecycle_rules = optional(list(object({
       name                       = string
@@ -610,7 +610,7 @@ variable "storage_accounts" {
     })), [])
   }))
   default = []
-  
+
   validation {
     condition = alltrue([
       for sa in var.storage_accounts : contains(["static_website", "general"], sa.storage_type)
@@ -637,16 +637,16 @@ variable "cosmos_db" {
       throughput     = optional(number, null)
       default_ttl    = optional(number, -1)
     })), [])
-    
+
     # Network Configuration
     public_network_access_enabled = optional(bool, true)
-    ip_range_filter              = optional(list(string), [])
+    ip_range_filter               = optional(list(string), [])
     virtual_network_rules = optional(list(object({
-      subnet_id                = string
+      subnet_id               = string
       ignore_missing_endpoint = optional(bool, false)
     })), [])
-    enable_private_endpoint     = optional(bool, false)
-    private_endpoint_subnet_id  = optional(string, null)
+    enable_private_endpoint    = optional(bool, false)
+    private_endpoint_subnet_id = optional(string, null)
   })
   default = {
     create        = false
@@ -669,22 +669,22 @@ variable "key_vault" {
     soft_delete_retention_days = optional(number, 7)
     purge_protection_enabled   = optional(bool, false)
     enable_rbac_authorization  = optional(bool, true)
-    
+
     # Permisos para servicios Azure
     enabled_for_deployment          = optional(bool, false)
     enabled_for_disk_encryption     = optional(bool, false)
     enabled_for_template_deployment = optional(bool, false)
-    
+
     # Network ACLs
     network_acls = optional(object({
       default_action = optional(string, "Allow")
       bypass         = optional(string, "AzureServices")
       ip_rules       = optional(list(string), [])
-    }), {
+      }), {
       default_action = "Allow"
       bypass         = "AzureServices"
     })
-    
+
     # Secretos a crear (opcional)
     secrets = optional(list(object({
       name  = string
@@ -709,7 +709,7 @@ variable "api_management" {
     publisher_name  = string
     publisher_email = string
     sku_name        = optional(string, "Consumption_0")
-    
+
     # VNet Configuration (solo para non-Consumption SKUs)
     virtual_network_type = optional(string, "None")
     virtual_network_configuration = optional(object({
@@ -737,10 +737,10 @@ variable "signalr" {
     sku          = optional(string, "Free_F1")
     capacity     = optional(number, 1)
     service_mode = optional(string, "Default")
-    
+
     # CORS
     cors_allowed_origins = optional(list(string), ["*"])
-    
+
     # Network
     public_network_access_enabled = optional(bool, true)
   })
@@ -761,15 +761,15 @@ variable "vnet" {
   type = object({
     create_vnet         = bool
     vnet_name           = string
-    resource_group_name = optional(string, null)  # Si es null, usa el RG del proyecto
+    resource_group_name = optional(string, null) # Si es null, usa el RG del proyecto
     address_space       = optional(list(string), [])
     dns_servers         = optional(list(string), [])
-    
+
     subnets = optional(map(object({
-      name             = string
-      address_prefixes = list(string)
+      name              = string
+      address_prefixes  = list(string)
       service_endpoints = optional(list(string), [])
-      
+
       delegation = optional(object({
         name = string
         service_delegation = object({
@@ -777,7 +777,7 @@ variable "vnet" {
           actions = optional(list(string), [])
         })
       }))
-      
+
       private_endpoint_network_policies_enabled     = optional(bool, true)
       private_link_service_network_policies_enabled = optional(bool, true)
     })), {})
@@ -801,22 +801,22 @@ variable "front_door" {
     name                     = string
     sku_name                 = optional(string, "Standard_AzureFrontDoor")
     response_timeout_seconds = optional(number, 120)
-    
+
     endpoints = optional(map(object({
       name    = string
       enabled = optional(bool, true)
     })), {})
-    
+
     origin_groups = optional(map(object({
       name                     = string
       session_affinity_enabled = optional(bool, false)
-      
+
       load_balancing = optional(object({
         additional_latency_in_milliseconds = optional(number, 50)
         sample_size                        = optional(number, 4)
         successful_samples_required        = optional(number, 3)
       }), {})
-      
+
       health_probe = optional(object({
         interval_in_seconds = number
         path                = optional(string, "/")
@@ -824,10 +824,10 @@ variable "front_door" {
         request_type        = optional(string, "HEAD")
       }))
     })), {})
-    
+
     origins = optional(map(object({
       name                           = string
-      origin_group_key              = string
+      origin_group_key               = string
       host_name                      = string
       http_port                      = optional(number, 80)
       https_port                     = optional(number, 443)
@@ -835,15 +835,15 @@ variable "front_door" {
       enabled                        = optional(bool, true)
       priority                       = optional(number, 1)
       weight                         = optional(number, 1000)
-      
+
       private_link = optional(object({
         request_message        = optional(string)
-        target_type           = optional(string)
-        location              = string
+        target_type            = optional(string)
+        location               = string
         private_link_target_id = string
       }))
     })), {})
-    
+
     routes = optional(map(object({
       name                   = string
       endpoint_key           = string
@@ -855,41 +855,41 @@ variable "front_door" {
       https_redirect_enabled = optional(bool, true)
       enabled                = optional(bool, true)
       link_to_default_domain = optional(bool, true)
-      
+
       cache = optional(object({
         query_string_caching_behavior = optional(string, "IgnoreQueryString")
         query_strings                 = optional(list(string), [])
         compression_enabled           = optional(bool, true)
         content_types_to_compress     = optional(list(string), [])
       }))
-      
+
       custom_domains = optional(list(string), [])
       rule_set_keys  = optional(list(string), [])
     })), {})
-    
+
     custom_domains = optional(map(object({
       name      = string
       host_name = string
-      
+
       tls = optional(object({
         certificate_type    = optional(string, "ManagedCertificate")
         minimum_tls_version = optional(string, "TLS12")
-      }), {
+        }), {
         certificate_type    = "ManagedCertificate"
         minimum_tls_version = "TLS12"
       })
     })), {})
-    
+
     rule_sets = optional(map(object({
       name = string
     })), {})
-    
+
     rules = optional(map(object({
       name              = string
       rule_set_key      = string
       order             = number
       behavior_on_match = optional(string, "Continue")
-      
+
       conditions = optional(object({
         request_uri = optional(object({
           operator         = string
@@ -897,14 +897,14 @@ variable "front_door" {
           negate_condition = optional(bool, false)
           transforms       = optional(list(string), [])
         }))
-        
+
         url_path = optional(object({
           operator         = string
           match_values     = optional(list(string), [])
           negate_condition = optional(bool, false)
           transforms       = optional(list(string), [])
         }))
-        
+
         url_file_extension = optional(object({
           operator         = string
           match_values     = list(string)
@@ -912,14 +912,14 @@ variable "front_door" {
           transforms       = optional(list(string), [])
         }))
       }))
-      
+
       actions = object({
         url_rewrite = optional(object({
           source_pattern          = string
           destination             = string
           preserve_unmatched_path = optional(bool, false)
         }))
-        
+
         url_redirect = optional(object({
           redirect_type        = string
           redirect_protocol    = optional(string, "Https")
@@ -928,12 +928,12 @@ variable "front_door" {
           query_string         = optional(string)
           destination_fragment = optional(string)
         }))
-        
+
         response_headers = optional(map(object({
           action = string
           value  = optional(string)
         })), {})
-        
+
         request_headers = optional(map(object({
           action = string
           value  = optional(string)
@@ -941,7 +941,7 @@ variable "front_door" {
       })
     })), {})
   })
-  
+
   default = {
     create   = false
     name     = ""

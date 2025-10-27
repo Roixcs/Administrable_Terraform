@@ -5,7 +5,7 @@
 variable "namespace_name" {
   description = "Nombre del Service Bus Namespace"
   type        = string
-  
+
   validation {
     condition     = can(regex("^[a-zA-Z][a-zA-Z0-9-]{4,48}[a-zA-Z0-9]$", var.namespace_name))
     error_message = "El nombre debe tener 6-50 caracteres, empezar con letra, y solo contener letras, números y guiones."
@@ -26,7 +26,7 @@ variable "sku" {
   description = "SKU del Service Bus (Basic, Standard, Premium)"
   type        = string
   default     = "Standard"
-  
+
   validation {
     condition     = contains(["Basic", "Standard", "Premium"], var.sku)
     error_message = "SKU debe ser: Basic, Standard o Premium."

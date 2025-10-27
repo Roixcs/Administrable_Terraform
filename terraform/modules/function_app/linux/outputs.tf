@@ -7,12 +7,12 @@ output "function_apps" {
   description = "Información de las Function Apps creadas"
   value = {
     for name, func in azapi_resource.function_app : name => {
-      id                = func.id
-      name              = func.name
-      enabled           = jsondecode(func.output).properties.enabled
-      default_hostname  = jsondecode(func.output).properties.defaultHostName
-      principal_id      = jsondecode(func.output).identity.principalId
-      state             = jsondecode(func.output).properties.state
+      id               = func.id
+      name             = func.name
+      enabled          = jsondecode(func.output).properties.enabled
+      default_hostname = jsondecode(func.output).properties.defaultHostName
+      principal_id     = jsondecode(func.output).identity.principalId
+      state            = jsondecode(func.output).properties.state
     }
   }
 }

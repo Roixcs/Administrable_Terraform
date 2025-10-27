@@ -1,67 +1,92 @@
 # ============================================
 # Test Client - Development Environment
+# CONFIGURACIÓN COMPLETA PARA PRUEBAS
 # ============================================
 
-# Global
+# ============================================
+# GLOBAL CONFIGURATION
+# ============================================
+
 project_name = "testclient"
 environment  = "dev"
 location     = "East US"
 
-# Azure Authentication
+# ============================================
+# AZURE AUTHENTICATION
+# ============================================
+# IMPORTANTE: Reemplazar con tus valores reales o usar variables de entorno
+
 subscription_id = "your-subscription-id-here"
 tenant_id       = "your-tenant-id-here"
 client_id       = "your-client-id-here"
 client_secret   = "your-client-secret-here"
 
-# Tags
+# ============================================
+# TAGS
+# ============================================
+
 tags = {
   Project     = "TestClient"
   Environment = "Development"
-  CostCenter  = "Engineering"
+  ManagedBy   = "Terraform"
   Owner       = "DevOps Team"
 }
 
-# Resource Group
+# ============================================
+# RESOURCE GROUP
+# ============================================
+
 resource_group = {
   create = true
-  name   = "testclient-dev-rg"
+  name   = "rg-testclient-dev"
 }
 
-# Application Insights
-application_insights = {
-  create_workspace = true
-  workspace_name   = "law-testclient-dev"
-}
 
-# Storage Accounts (INDEPENDIENTES)
+# ============================================
+# STORAGE ACCOUNTS (INDEPENDIENTES)
+# ============================================
+# Storage para Static Website y datos generales
+
 storage_accounts = {
   website = {
-    name                     = "testclientdevweb"
+    name                     = "sttestclientdevweb"
     storage_type             = "static_website"
     account_tier             = "Standard"
     account_replication_type = "LRS"
   }
   data = {
-    name                     = "testclientdevdata"
+    name                     = "sttestclientdevdata"
     storage_type             = "general"
     account_tier             = "Standard"
     account_replication_type = "LRS"
   }
 }
 
-# Service Bus
+# ============================================
+# SERVICE BUS
+# ============================================
+
 service_bus = {
   create         = true
   namespace_name = "sb-testclient-dev"
   sku            = "Standard"
+  
   queues = [
     {
       name                                        = "orders-queue"
       max_size_in_megabytes                      = 1024
       enable_dead_lettering_on_message_expiration = true
       max_delivery_count                         = 10
+      duplicate_detection_history_time_window    = "PT10M"
+    },
+    {
+      name                                        = "notifications-queue"
+      max_size_in_megabytes                      = 2048
+      enable_dead_lettering_on_message_expiration = true
+      max_delivery_count                         = 5
     }
   ]
+  
   topics = [
     {
       name                  = "events-topic"
@@ -71,305 +96,18 @@ service_bus = {
           name                                        = "processor-sub"
           max_delivery_count                          = 10
           enable_dead_lettering_on_message_expiration = true
+        },
+        {
+          name               = "analytics-sub"
+          max_delivery_count = 15
         }
       ]
     }
   ]
 }
 
-# API Management
-api_management = {
-  create          = true
-  name            = "apim-testclient-dev"
-  publisher_name  = "TestClient"
-  publisher_email = "devops@testclient.com"
-  sku_name        = "Consumption_0"
-}
-
-
-# Key Vault
-key_vault = {
-  create                     = true
-  name                       = "kv-testclient-dev"
-  sku_name                   = "standard"
-  soft_delete_retention_days = 7
-  purge_protection_enabled   = false
-  enable_rbac_authorization  = true
-}
-
-# Azure Functions Linux (Flex Consumption)
-functions_linux = [
-  {
-    name    = "fn-testclient-processor-dev"
-    runtime = "dotnet-isolated"
-    version = "8.0"
-    app_settings = [
-      {
-        name  = "ServiceBusConnection__fullyQualifiedNamespace"
-        value = "sb-testclient-dev.servicebus.windows.net"
-      },
-      {
-        name  = "FUNCTIONS_WORKER_RUNTIME"
-        value = "dotnet-isolated"
-      }
-    ]
-    instance_memory_mb     = 2048
-    maximum_instance_count = 100
-  },
-  {
-    name    = "fn-testclient-api-dev"
-    runtime = "dotnet-isolated"
-    version = "8.0"
-    app_settings = [
-      {
-        name  = "Environment"
-        value = "Development"
-      }
-    ]
-    instance_memory_mb     = 2048
-    maximum_instance_count = 50
-  }
-]
-
-
-# Cosmos DB
-cosmos_db = {
-  create            = true
-  account_name      = "cosmos-testclient-dev"
-  database_name     = "testclient-db"
-  enable_serverless = true
-  consistency_level = "Session"
-  containers = [
-    {
-      name           = "orders"
-      partition_keys = ["/customerId"]
-      throughput     = null  # null para serverless
-      default_ttl    = -1    # -1 = sin TTL
-    },
-    {
-      name           = "customers"
-      partition_keys = ["/id"]
-      throughput     = null
-      default_ttl    = 86400  # 24 horas
-    }
-  ]
-}
-
-# SignalR Service
-signalr = {
-  create       = false
-  name         = "signalr-testclient-dev"
-  sku          = "Free_F1"
-  capacity     = 1
-  service_mode = "Default"
-}
-
-
 # ============================================
-# VNET CONFIGURATION
-# ============================================
-
-vnet = {
-  create        = true
-  name          = "vnet-myproject-test-dev"
-  address_space = ["10.180.0.0/16"]
-  dns_servers   = [] # Opcional: ["10.180.0.4", "10.180.0.5"]
-  
-  subnets = {
-  # Subnet básica sin delegación
-  subnet_general = {
-    name             = "subnet-general"
-    address_prefixes = ["10.180.1.0/24"]
-    service_endpoints = []
-  }
-  
-  # Subnet para Azure Functions con delegación
-  subnet_functions = {
-    name             = "subnet-functions"
-    address_prefixes = ["10.180.2.0/24"]
-    service_endpoints = [
-      "Microsoft.Storage",
-      "Microsoft.KeyVault",
-      "Microsoft.ServiceBus"
-    ]
-    delegation = {
-      name = "delegation-functions"
-      service_delegation = {
-        name = "Microsoft.Web/serverFarms"
-        actions = [
-          "Microsoft.Network/virtualNetworks/subnets/action"
-        ]
-      }
-    }
-    private_endpoint_network_policies_enabled     = false
-    private_link_service_network_policies_enabled = false
-  }
-  
-  # Subnet para App Services
-  subnet_apps = {
-    name             = "subnet-apps"
-    address_prefixes = ["10.180.3.0/24"]
-    service_endpoints = [
-      "Microsoft.Storage",
-      "Microsoft.Sql",
-      "Microsoft.Web"
-    ]
-    private_endpoint_network_policies_enabled     = true
-    private_link_service_network_policies_enabled = true
-  }
-  
-  # Subnet para Private Endpoints
-  subnet_private_endpoints = {
-    name             = "subnet-private-endpoints"
-    address_prefixes = ["10.180.4.0/24"]
-    service_endpoints = []
-    private_endpoint_network_policies_enabled     = false
-    private_link_service_network_policies_enabled = false
-  }
-  
-  # Subnet para bases de datos
-  subnet_data = {
-    name             = "subnet-data"
-    address_prefixes = ["10.180.5.0/24"]
-    service_endpoints = [
-      "Microsoft.Sql",
-      "Microsoft.Storage",
-      "Microsoft.AzureCosmosDB"
-    ]
-  }
-  
-  # Subnet para Application Gateway (si aplica)
-  subnet_appgw = {
-    name             = "subnet-appgw"
-    address_prefixes = ["10.180.10.0/24"]
-    service_endpoints = []
-  }
-}
-
-
-# ============================================
-# LOG ANALYTICS WORKSPACE CONFIGURATION
-# ============================================
-
-log_analytics = {
-  create                     = true
-  name                       = "log-myproject-test-dev"
-  sku                        = "PerGB2018"  # Free, PerNode, Premium, Standard, Standalone, Unlimited, CapacityReservation, PerGB2018
-  retention_in_days          = 30           # 30-730 días
-  daily_quota_gb             = -1           # -1 para ilimitado
-  internet_ingestion_enabled = true
-  internet_query_enabled     = true
-  # reservation_capacity_in_gb_per_day = 100  # Solo para CapacityReservation SKU
-}
-
-
-# ============================================
-# AZURE FUNCTIONS (WINDOWS) CONFIGURATION
-# ============================================
-
-functions_windows = [
-  # Function App - Consumption Plan
-  {
-    name                         = "fn-api-myproject-test-dev"
-    plan_type                    = "consumption"
-    create                       = true
-    always_on                    = false  # No disponible en Consumption
-    dotnet_version               = "v8.0"
-    use_dotnet_isolated_runtime  = true
-    application_insights_enabled = true
-    
-    app_settings = [
-      {
-        name         = "ENVIRONMENT"
-        value        = "test-dev"
-        slot_setting = false
-      },
-      {
-        name         = "ServiceBusConnectionString"
-        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/ServiceBusCS/)"
-        slot_setting = false
-      },
-      {
-        name         = "StorageAccountConnectionString"
-        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/StorageCS/)"
-        slot_setting = false
-      }
-    ]
-    
-    identity_type = "SystemAssigned"
-  },
-  
-  # Function App - Basic Plan (B1) con VNet Integration
-  {
-    name                         = "fn-worker-myproject-test-dev"
-    plan_type                    = "basic"
-    create                       = true
-    plan_name                    = "asp-worker-test-dev"  # Nombre personalizado del plan
-    always_on                    = true  # Disponible en Basic
-    dotnet_version               = "v8.0"
-    use_dotnet_isolated_runtime  = true
-    application_insights_enabled = true
-    
-    # VNet Integration (opcional)
-    # vnet_integration = {
-    #   subnet_id = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-functions"
-    # }
-    
-    app_settings = [
-      {
-        name         = "ENVIRONMENT"
-        value        = "test-dev"
-        slot_setting = false
-      },
-      {
-        name         = "CosmosDbConnectionString"
-        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/CosmosDbCS/)"
-        slot_setting = false
-      },
-      {
-        name         = "WEBSITE_TIME_ZONE"
-        value        = "Eastern Standard Time"
-        slot_setting = false
-      }
-    ]
-    
-    identity_type = "SystemAssigned"
-  },
-  
-  # Function App - Consumption con Storage usando Managed Identity
-  {
-    name                          = "fn-events-myproject-test-dev"
-    plan_type                     = "consumption"
-    create                        = false  # Deshabilitado
-    always_on                     = false
-    dotnet_version                = "v8.0"
-    use_dotnet_isolated_runtime   = true
-    application_insights_enabled  = true
-    storage_uses_managed_identity = true
-    
-    app_settings = [
-      {
-        name         = "EventHubConnectionString"
-        value        = "@Microsoft.KeyVault(SecretUri=https://mykv.vault.azure.net/secrets/EventHubCS/)"
-        slot_setting = false
-      }
-    ]
-    
-    identity_type = "SystemAssigned"
-  }
-]
-
-
-
-# ============================================
-# Cosmos DB Configuration Examples
-# ============================================
-
-# ============================================
-# ESCENARIO 1: Cosmos DB Público (Development)
-# ============================================
-# ============================================
-# Cosmos DB
+# COSMOS DB
 # ============================================
 
 cosmos_db = {
@@ -391,196 +129,20 @@ cosmos_db = {
       partition_keys = ["/id"]
       throughput     = null
       default_ttl    = 86400  # 24 horas
-    }
-  ]
-  
-  # Network: Público sin restricciones (desarrollo)
-  public_network_access_enabled = true
-  ip_range_filter              = []
-  virtual_network_rules        = []
-  enable_private_endpoint      = false
-}
-
-# ============================================
-# ESCENARIO 2: Cosmos DB con IP Firewall (Staging)
-# ============================================
-cosmos_db = {
-  create            = true
-  account_name      = "cosmos-testclient-uat"
-  database_name     = "testclient-db"
-  enable_serverless = true
-  consistency_level = "Session"
-  
-  containers = [
-    {
-      name           = "orders"
-      partition_keys = ["/customerId"]
     },
     {
       name           = "products"
-      partition_keys = ["/categoryId"]
-      default_ttl    = 2592000  # 30 días
+      partition_keys = ["/category"]
+      throughput     = null
+      default_ttl    = -1
     }
   ]
-  
-  # Network: Acceso público con firewall IP
-  public_network_access_enabled = true
-  ip_range_filter = [
-    "40.76.54.131",           # IP de oficina
-    "52.176.6.30/32",         # Azure DevOps IP
-    "104.42.195.92/27"        # Rango de IPs corporativas
-  ]
-  virtual_network_rules     = []
-  enable_private_endpoint   = false
 }
 
 # ============================================
-# ESCENARIO 3: Cosmos DB con VNet Integration (Production - Basic)
-# ============================================
-cosmos_db = {
-  create            = true
-  account_name      = "cosmos-testclient-prd"
-  database_name     = "testclient-db"
-  enable_serverless = true
-  consistency_level = "Session"
-  
-  containers = [
-    {
-      name           = "orders"
-      partition_keys = ["/customerId"]
-    },
-    {
-      name           = "customers"
-      partition_keys = ["/id"]
-    },
-    {
-      name           = "transactions"
-      partition_keys = ["/orderId"]
-      default_ttl    = 7776000  # 90 días
-    }
-  ]
-  
-  # Network: Solo acceso desde VNet específica
-  public_network_access_enabled = true  # Debe estar en true para VNet rules
-  ip_range_filter              = []
-  virtual_network_rules = [
-    {
-      subnet_id                = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-data"
-      ignore_missing_endpoint = false
-    },
-    {
-      subnet_id                = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-functions"
-      ignore_missing_endpoint = false
-    }
-  ]
-  enable_private_endpoint = false
-}
-
-# ============================================
-# ESCENARIO 4: Cosmos DB con Private Endpoint (Production - Full Security)
-# ============================================
-cosmos_db = {
-  create            = true
-  account_name      = "cosmos-testclient-prd"
-  database_name     = "testclient-db"
-  enable_serverless = true
-  consistency_level = "Strong"  # Mayor consistencia para producción crítica
-  
-  containers = [
-    {
-      name           = "orders"
-      partition_keys = ["/customerId"]
-    },
-    {
-      name           = "customers"
-      partition_keys = ["/id"]
-    },
-    {
-      name           = "audit_logs"
-      partition_keys = ["/timestamp"]
-      default_ttl    = 31536000  # 1 año
-    }
-  ]
-  
-  # Network: Private Endpoint (máxima seguridad)
-  public_network_access_enabled = false  # Sin acceso público
-  ip_range_filter              = []
-  virtual_network_rules        = []
-  enable_private_endpoint      = true
-  private_endpoint_subnet_id   = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-private-endpoints"
-  private_endpoint_name        = "cosmos-testclient-prd-pe"
-}
-
-# ============================================
-# ESCENARIO 5: Cosmos DB Híbrido (VNet + IP Firewall)
-# ============================================
-cosmos_db = {
-  create            = true
-  account_name      = "cosmos-testclient-hybrid"
-  database_name     = "testclient-db"
-  enable_serverless = true
-  consistency_level = "Session"
-  
-  containers = [
-    {
-      name           = "orders"
-      partition_keys = ["/customerId"]
-    }
-  ]
-  
-  # Network: Acceso desde VNet Y IPs específicas
-  public_network_access_enabled = true
-  ip_range_filter = [
-    "40.76.54.131"  # IP de oficina para acceso de emergencia
-  ]
-  virtual_network_rules = [
-    {
-      subnet_id                = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-data"
-      ignore_missing_endpoint = false
-    }
-  ]
-  enable_private_endpoint = false
-}
-
-# ============================================
-# NOTAS IMPORTANTES SOBRE NETWORKING
+# KEY VAULT
 # ============================================
 
-# 1. IP FIREWALL (ip_range_filter):
-#    - Formato: ["10.0.0.0/24", "20.30.40.50"]
-#    - Soporta CIDR y IPs individuales
-#    - Se concatenan con comas en Cosmos DB
-#    - Útil para oficinas, Azure DevOps, etc.
-
-# 2. VIRTUAL NETWORK RULES:
-#    - Requiere public_network_access_enabled = true
-#    - La subnet DEBE tener Service Endpoint "Microsoft.AzureCosmosDB"
-#    - ignore_missing_endpoint = false falla si el endpoint no existe
-#    - ignore_missing_endpoint = true permite creación antes del endpoint
-
-# 3. PRIVATE ENDPOINT:
-#    - Máxima seguridad (sin acceso público)
-#    - Crea automáticamente Private DNS Zone
-#    - Solo accesible desde dentro de la VNet
-#    - Recomendado para producción crítica
-
-# 4. COMBINACIONES COMUNES:
-#    - Dev: public_network_access = true, sin restricciones
-#    - UAT: public_network_access = true + ip_range_filter
-#    - Prod Básico: public_network_access = true + virtual_network_rules
-#    - Prod Alto: public_network_access = false + private_endpoint
-
-# 5. SERVICE ENDPOINTS EN SUBNET:
-#    Para VNet rules, la subnet debe tener:
-#    service_endpoints = ["Microsoft.AzureCosmosDB"]
-
-
-
-# ============================================
-# Key Vault
-# ============================================
-
-# Escenario 1: Básico (Development - sin secretos)
 key_vault = {
   create                     = true
   name                       = "kv-testclient-dev"
@@ -588,174 +150,58 @@ key_vault = {
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
   enable_rbac_authorization  = true
-  
-  # Permisos Azure
-  enabled_for_deployment          = false
-  enabled_for_disk_encryption     = false
-  enabled_for_template_deployment = false
-  
-  # Network: Abierto para desarrollo
-  network_acls = {
-    default_action = "Allow"
-    bypass         = "AzureServices"
-    ip_rules       = []
-  }
-  
-  # Sin secretos (se crean manualmente o vía pipeline)
-  secrets = []
 }
 
-# Escenario 2: Con secretos iniciales
-key_vault = {
-  create                     = true
-  name                       = "kv-testclient-dev"
-  sku_name                   = "standard"
-  soft_delete_retention_days = 7
-  purge_protection_enabled   = false
-  enable_rbac_authorization  = true
-  
-  enabled_for_deployment          = false
-  enabled_for_disk_encryption     = false
-  enabled_for_template_deployment = true  # Para ARM templates
-  
-  network_acls = {
-    default_action = "Allow"
-    bypass         = "AzureServices"
-    ip_rules       = []
-  }
-  
-  # Secretos iniciales (mejor usar Azure DevOps después)
-  secrets = [
-    {
-      name  = "CosmosDB-ConnectionString"
-      value = "AccountEndpoint=https://..."
-    },
-    {
-      name  = "ServiceBus-ConnectionString"
-      value = "Endpoint=sb://..."
-    }
-  ]
-}
-
-
 # ============================================
-# API Management
+# API MANAGEMENT
 # ============================================
 
-# Escenario 1: Consumption (Serverless)
 api_management = {
   create          = true
   name            = "apim-testclient-dev"
-  publisher_name  = "TestClient Dev Team"
-  publisher_email = "dev@testclient.com"
+  publisher_name  = "TestClient"
+  publisher_email = "devops@testclient.com"
   sku_name        = "Consumption_0"
-  
-  # VNet no soportado en Consumption
-  virtual_network_type          = "None"
-  virtual_network_configuration = null
-  public_ip_address_id          = null
-}
-
-# Escenario 2: Developer (para desarrollo con más features)
-api_management = {
-  create          = true
-  name            = "apim-testclient-dev"
-  publisher_name  = "TestClient"
-  publisher_email = "devops@testclient.com"
-  sku_name        = "Developer_1"
-  
-  # Sin VNet (acceso público)
-  virtual_network_type          = "None"
-  virtual_network_configuration = null
-  public_ip_address_id          = null
-}
-
-# Escenario 3: Developer con VNet External
-api_management = {
-  create          = true
-  name            = "apim-testclient-uat"
-  publisher_name  = "TestClient"
-  publisher_email = "devops@testclient.com"
-  sku_name        = "Developer_1"
-  
-  # VNet External (accesible desde internet pero dentro de VNet)
-  virtual_network_type = "External"
-  virtual_network_configuration = {
-    subnet_id = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-apim"
-  }
-  public_ip_address_id = null  # Se crea automáticamente
-}
-
-# Escenario 4: Standard con VNet Internal (Producción)
-api_management = {
-  create          = true
-  name            = "apim-testclient-prd"
-  publisher_name  = "TestClient Production"
-  publisher_email = "ops@testclient.com"
-  sku_name        = "Standard_1"
-  
-  # VNet Internal (solo accesible desde dentro de la VNet)
-  virtual_network_type = "Internal"
-  virtual_network_configuration = {
-    subnet_id = "/subscriptions/xxxxx/resourceGroups/myRG/providers/Microsoft.Network/virtualNetworks/myVNet/subnets/subnet-apim"
-  }
-  public_ip_address_id = null
 }
 
 # ============================================
-# Virtual Network
+# SIGNALR SERVICE
 # ============================================
 
+signalr = {
+  create       = true
+  name         = "signalr-testclient-dev"
+  sku          = "Free_F1"
+  capacity     = 1
+  service_mode = "Default"
+}
+
 # ============================================
-# ESCENARIO 1: Crear VNet nueva con subnets básicas
+# VIRTUAL NETWORK
 # ============================================
+
 vnet = {
-  create_vnet         = true
-  vnet_name           = "vnet-testclient-dev"
-  resource_group_name = null  # Usa el RG del proyecto
-  address_space       = ["10.180.0.0/16"]
-  dns_servers         = []
+  create        = true
+  name          = "vnet-testclient-dev"
+  address_space = ["10.0.0.0/16"]
+  dns_servers   = []
   
   subnets = {
-    subnet_general = {
+    # Subnet general
+    general = {
       name             = "subnet-general"
-      address_prefixes = ["10.180.1.0/24"]
+      address_prefixes = ["10.0.1.0/24"]
       service_endpoints = []
     }
     
-    subnet_data = {
-      name             = "subnet-data"
-      address_prefixes = ["10.180.2.0/24"]
-      service_endpoints = [
-        "Microsoft.AzureCosmosDB",
-        "Microsoft.Storage",
-        "Microsoft.Sql"
-      ]
-    }
-  }
-}
-
-# ============================================
-# ESCENARIO 2: Solo crear subnets en VNet existente
-# ============================================
-vnet = {
-  create_vnet         = false
-  vnet_name           = "vnet-shared-prod"  # VNet existente
-  resource_group_name = "rg-networking-prod"  # RG donde está la VNet
-  address_space       = []  # No aplica
-  dns_servers         = []  # No aplica
-  
-  subnets = {
-    subnet_functions = {
-      name             = "subnet-testclient-functions"
-      address_prefixes = ["10.100.5.0/24"]
+    # Subnet para Functions con delegación
+    functions = {
+      name             = "subnet-functions"
+      address_prefixes = ["10.0.2.0/24"]
       service_endpoints = [
         "Microsoft.Storage",
-        "Microsoft.KeyVault",
-        "Microsoft.ServiceBus"
+        "Microsoft.KeyVault"
       ]
-      
-      # Delegación para Azure Functions
       delegation = {
         name = "delegation-functions"
         service_delegation = {
@@ -765,132 +211,98 @@ vnet = {
           ]
         }
       }
-      
-      private_endpoint_network_policies_enabled = false
+      private_link_service_network_policies_enabled = false
     }
     
-    subnet_apim = {
-      name             = "subnet-testclient-apim"
-      address_prefixes = ["10.100.6.0/27"]
-      service_endpoints = []
-    }
-  }
-}
-
-# ============================================
-# ESCENARIO 3: VNet nueva para proyecto específico
-# ============================================
-vnet = {
-  create_vnet         = true
-  vnet_name           = "vnet-testclient-prd"
-  resource_group_name = null
-  address_space       = ["10.180.24.0/23"]
-  dns_servers         = []
-  
-  subnets = {
-    subnet_frontend = {
-      name             = "subnet-frontend"
-      address_prefixes = ["10.180.24.0/28"]
-      service_endpoints = []
-    }
-    
-    subnet_backend = {
-      name             = "subnet-backend"
-      address_prefixes = ["10.180.24.16/28"]
-      service_endpoints = [
-        "Microsoft.Storage",
-        "Microsoft.AzureCosmosDB"
-      ]
-    }
-    
-    subnet_functions = {
-      name             = "subnet-functions"
-      address_prefixes = ["10.180.24.32/27"]
-      service_endpoints = [
-        "Microsoft.Storage",
-        "Microsoft.KeyVault",
-        "Microsoft.ServiceBus"
-      ]
-      
-      delegation = {
-        name = "delegation-functions"
-        service_delegation = {
-          name = "Microsoft.Web/serverFarms"
-          actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
-        }
-      }
-    }
-    
-    subnet_private_endpoints = {
+    # Subnet para Private Endpoints
+    private_endpoints = {
       name             = "subnet-private-endpoints"
-      address_prefixes = ["10.180.24.64/27"]
+      address_prefixes = ["10.0.3.0/24"]
       service_endpoints = []
-      private_endpoint_network_policies_enabled = false
+      private_link_service_network_policies_enabled = false
     }
+  }
+}
+
+# ============================================
+# AZURE FUNCTIONS - LINUX (FLEX CONSUMPTION)
+# ============================================
+
+functions_linux = [
+  {
+    name    = "fn-testclient-api-dev"
+    runtime = "dotnet-isolated"
+    version = "8.0"
+    app_settings = [
+      {
+        name         = "ENVIRONMENT"
+        value        = "Development"
+        slot_setting = false
+      },
+      {
+        name         = "ServiceBusConnection__fullyQualifiedNamespace"
+        value        = "sb-testclient-dev.servicebus.windows.net"
+        slot_setting = false
+      }
+    ]
+    instance_memory_mb     = 2048
+    maximum_instance_count = 100
+  },
+  {
+    name    = "fn-testclient-worker-dev"
+    runtime = "dotnet-isolated"
+    version = "8.0"
+    app_settings = [
+      {
+        name         = "ENVIRONMENT"
+        value        = "Development"
+        slot_setting = false
+      }
+    ]
+    instance_memory_mb     = 2048
+    maximum_instance_count = 50
+  }
+]
+
+# ============================================
+# AZURE FUNCTIONS - WINDOWS
+# ============================================
+
+functions_windows = [
+  {
+    name                         = "fn-testclient-processor-dev"
+    plan_type                    = "consumption"
+    create                       = true
+    always_on                    = false
+    dotnet_version               = "v8.0"
+    use_dotnet_isolated_runtime  = true
+    application_insights_enabled = true
     
-    subnet_apim = {
-      name             = "subnet-apim"
-      address_prefixes = ["10.180.24.96/28"]
-      service_endpoints = []
-    }
+    app_settings = [
+      {
+        name         = "ENVIRONMENT"
+        value        = "Development"
+        slot_setting = false
+      },
+      {
+        name         = "CosmosDbEndpoint"
+        value        = "https://cosmos-testclient-dev.documents.azure.com:443/"
+        slot_setting = false
+      }
+    ]
+    
+    identity_type = "SystemAssigned"
   }
-}
+]
 
 # ============================================
-# ESCENARIO 4: Solo agregar una subnet a VNet existente
-# ============================================
-vnet = {
-  create_vnet         = false
-  vnet_name           = "vnet-corporate"
-  resource_group_name = "rg-networking"
-  address_space       = []
-  dns_servers         = []
-  
-  subnets = {
-    subnet_cosmos_pe = {
-      name             = "subnet-testclient-cosmosdb-pe"
-      address_prefixes = ["10.50.10.0/28"]
-      service_endpoints = []
-      private_endpoint_network_policies_enabled = false
-    }
-  }
-}
-```
-
----
-
-## 📊 Service Endpoints Comunes
-
-| Servicio | Service Endpoint | Cuándo usar |
-|----------|------------------|-------------|
-| **Cosmos DB** | `Microsoft.AzureCosmosDB` | Para VNet rules en Cosmos |
-| **Storage** | `Microsoft.Storage` | Para Storage Account firewall |
-| **SQL** | `Microsoft.Sql` | Para Azure SQL VNet rules |
-| **Key Vault** | `Microsoft.KeyVault` | Para Key Vault network rules |
-| **Service Bus** | `Microsoft.ServiceBus` | Para Service Bus VNet rules |
-| **Event Hub** | `Microsoft.EventHub` | Para Event Hub VNet rules |
-
-## 🔧 Delegaciones Comunes
-
-| Servicio | Delegation Name | Actions |
-|----------|----------------|---------|
-| **Azure Functions** | `Microsoft.Web/serverFarms` | `Microsoft.Network/virtualNetworks/subnets/action` |
-| **App Services** | `Microsoft.Web/serverFarms` | `Microsoft.Network/virtualNetworks/subnets/action` |
-| **Container Instances** | `Microsoft.ContainerInstance/containerGroups` | Varias |
-| **SQL Managed Instance** | `Microsoft.Sql/managedInstances` | Varias |
-
----
-
-
-
-# ============================================
-# FRONT DOOR CONFIGURATION
+# FRONT DOOR
 # ============================================
 
 front_door = {
-  create   = true
-  name     = "fd-myproject-test-dev"
-  sku_name = "Standard_AzureFrontDoor"
+  create                   = true
+  name                     = "fd-testclient-dev"
+  sku_name                 = "Standard_AzureFrontDoor"
   response_timeout_seconds = 120
   
   # Endpoints
@@ -922,12 +334,12 @@ front_door = {
     }
   }
   
-  # Origins (Storage Account Static Website)
+  # Origins
   origins = {
     storage_web = {
       name                           = "storage-website-origin"
-      origin_group_key              = "static_website"
-      host_name                      = "testclientdevweb.z13.web.core.windows.net"  # Cambiar por tu storage
+      origin_group_key               = "static_website"
+      host_name                      = "sttestclientdevweb.z13.web.core.windows.net"  # Ajustar según región
       http_port                      = 80
       https_port                     = 443
       certificate_name_check_enabled = true
@@ -937,19 +349,19 @@ front_door = {
     }
   }
   
-  # Rule Sets (para rewrites y headers)
+  # Rule Sets
   rule_sets = {
-    security_and_rewrites = {
-      name = "SecurityAndRewrites"
+    security_rules = {
+      name = "SecurityRules"
     }
   }
   
-  # Rules (Rewrite a index.html y Security Headers)
+  # Rules
   rules = {
     # Regla 1: Rewrite root a index.html
     rewrite_to_index = {
       name              = "RewriteToIndex"
-      rule_set_key      = "security_and_rewrites"
+      rule_set_key      = "security_rules"
       order             = 1
       behavior_on_match = "Continue"
       
@@ -972,7 +384,7 @@ front_door = {
     # Regla 2: Security Headers
     security_headers = {
       name              = "SecurityHeaders"
-      rule_set_key      = "security_and_rewrites"
+      rule_set_key      = "security_rules"
       order             = 2
       behavior_on_match = "Continue"
       
@@ -1016,7 +428,7 @@ front_door = {
       https_redirect_enabled = true
       enabled                = true
       link_to_default_domain = true
-      rule_set_keys          = ["security_and_rewrites"]
+      rule_set_keys          = ["security_rules"]
       
       cache = {
         query_string_caching_behavior = "IgnoreQueryString"
@@ -1030,22 +442,10 @@ front_door = {
           "application/xml"
         ]
       }
+      
+      custom_domains = []
     }
   }
   
-  # Custom Domains (opcional)
-  custom_domains = {
-    # Ejemplo - descomenta y configura si tienes dominio personalizado
-    # main_domain = {
-    #   name      = "www-mydomain-com"
-    #   host_name = "www.mydomain.com"
-    #   
-    #   tls = {
-    #     certificate_type    = "ManagedCertificate"
-    #     minimum_tls_version = "TLS12"
-    #   }
-    # }
-  }
+  custom_domains = {}
 }
-
-

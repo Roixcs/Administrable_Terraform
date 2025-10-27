@@ -13,18 +13,18 @@ output "resource_group_location" {
   value       = var.resource_group.create ? module.resource_group[0].location : var.location
 }
 
-output "storage_accounts" {
-  description = "Información de los Storage Accounts independientes creados"
-  value = length(var.storage_accounts) > 0 ? {
-    for key, sa in module.storage_account : key => {
-      id                    = sa.id
-      name                  = sa.name
-      type                  = var.storage_accounts[key].storage_type
-      primary_blob_endpoint = sa.primary_blob_endpoint
-      primary_web_endpoint  = sa.primary_web_endpoint
-    }
-  } : {}
-}
+# output "storage_accounts" {
+#   description = "Información de los Storage Accounts independientes creados"
+#   value = length(var.storage_accounts) > 0 ? {
+#     for key, sa in module.storage_account : key => {
+#       id                    = sa.id
+#       name                  = sa.name
+#       type                  = var.storage_accounts[key].storage_type
+#       primary_blob_endpoint = sa.primary_blob_endpoint
+#       primary_web_endpoint  = sa.primary_web_endpoint
+#     }
+#   } : {}
+# }
 
 # output "service_bus" {
 #   description = "Información del Service Bus"
@@ -36,13 +36,13 @@ output "storage_accounts" {
 #   } : null
 # }
 
-output "functions_linux" {
-  description = "Información de Azure Functions Linux"
-  value = length(var.functions_linux) > 0 ? {
-    function_apps         = module.function_linux[0].function_apps
-    storage_accounts      = module.function_linux[0].storage_accounts
-  } : null
-}
+# output "functions_linux" {
+#   description = "Información de Azure Functions Linux"
+#   value = length(var.functions_linux) > 0 ? {
+#     function_apps         = module.functions_linux[0].function_apps
+#     storage_accounts      = module.functions_linux[0].storage_accounts
+#   } : null
+# }
 
 output "workspace_id" {
   description = "ID del Log Analytics Workspace compartido"
@@ -152,34 +152,39 @@ output "log_analytics_primary_shared_key" {
 }
 
 
-
 # ============================================
 # AZURE FUNCTIONS (WINDOWS) OUTPUTS
 # ============================================
 
 output "function_app_windows_ids" {
   description = "IDs de las Azure Functions Windows"
-  value       = module.azure_functions_windows.function_app_ids
+  value       = length(var.functions_windows) > 0 ? module.functions_windows.function_app_ids : {}
 }
 
 output "function_app_windows_names" {
   description = "Nombres de las Azure Functions Windows"
-  value       = module.azure_functions_windows.function_app_names
+  value       = length(var.functions_windows) > 0 ? module.functions_windows.function_app_names : []
 }
 
 output "function_app_windows_hostnames" {
   description = "Hostnames de las Azure Functions Windows"
-  value       = module.azure_functions_windows.function_app_default_hostnames
+  value       = length(var.functions_windows) > 0 ? module.functions_windows.function_app_default_hostnames : {}
 }
 
 output "function_app_windows_identities" {
   description = "Identities de las Azure Functions Windows"
-  value       = module.azure_functions_windows.function_app_identities
+  value       = length(var.functions_windows) > 0 ? module.functions_windows.function_app_identities : {}
 }
 
+output "function_app_windows_storage_accounts" {
+  description = "Storage Accounts de las Azure Functions Windows"
+  value       = length(var.functions_windows) > 0 ? module.functions_windows.storage_account_names : []
+}
 
-
-
+output "function_app_windows_app_insights" {
+  description = "Application Insights de las Azure Functions Windows"
+  value       = length(var.functions_windows) > 0 ? module.functions_windows.application_insights_ids : {}
+}
 
 
 
@@ -198,11 +203,11 @@ output "function_app_windows_identities" {
 # Functions Linux - DISPATCHER
 # ============================================
 
-output "functions_linux_dispatcher" {
+output "functions_linux" {
   description = "Información de Functions Linux (Dispatcher)"
   value = length(var.functions_linux) > 0 ? {
-    function_apps    = module.functions_linux_dispatcher[0].function_apps
-    storage_accounts = module.functions_linux_dispatcher[0].storage_accounts
+    function_apps    = module.functions_linux[0].function_apps
+    storage_accounts = module.functions_linux[0].storage_accounts
   } : null
 }
 
@@ -257,9 +262,9 @@ output "service_bus" {
 output "storage_accounts" {
   description = "Información de los Storage Accounts independientes creados"
   value = length(var.storage_accounts) > 0 ? {
-    accounts         = module.storage_accounts[0].storage_accounts
-    static_websites  = module.storage_accounts[0].static_websites
-    containers       = module.storage_accounts[0].containers
+    accounts        = module.storage_accounts[0].storage_accounts
+    static_websites = module.storage_accounts[0].static_websites
+    containers      = module.storage_accounts[0].containers
   } : null
   sensitive = true
 }
@@ -271,12 +276,12 @@ output "storage_accounts" {
 output "cosmos_db" {
   description = "Información de Cosmos DB"
   value = var.cosmos_db.create ? {
-    account_id        = module.cosmos_db[0].account_id
-    account_name      = module.cosmos_db[0].account_name
-    endpoint          = module.cosmos_db[0].endpoint
-    database_name     = module.cosmos_db[0].database_name
-    containers        = module.cosmos_db[0].containers
-    
+    account_id    = module.cosmos_db[0].account_id
+    account_name  = module.cosmos_db[0].account_name
+    endpoint      = module.cosmos_db[0].endpoint
+    database_name = module.cosmos_db[0].database_name
+    containers    = module.cosmos_db[0].containers
+
     # Network Info
     public_access_enabled = module.cosmos_db[0].public_network_access_enabled
     private_endpoint_id   = module.cosmos_db[0].private_endpoint_id

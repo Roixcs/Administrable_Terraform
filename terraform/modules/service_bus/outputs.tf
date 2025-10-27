@@ -22,9 +22,9 @@ output "queues" {
   description = "Información de las queues creadas"
   value = {
     for name, queue in azurerm_servicebus_queue.this : name => {
-      id      = queue.id
-      name    = queue.name
-      status  = queue.status
+      id     = queue.id
+      name   = queue.name
+      status = queue.status
     }
   }
 }
