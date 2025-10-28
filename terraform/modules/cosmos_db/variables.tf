@@ -45,7 +45,7 @@ variable "kind" {
 }
 
 variable "consistency_level" {
-  description = "Nivel de consistencia (BoundedStaleness, Eventual, Session, Strong, ConsistentPrefix)"
+  description = "Nivel de consistencia"
   type        = string
   default     = "Session"
 
@@ -67,13 +67,13 @@ variable "enable_automatic_failover" {
   default     = false
 }
 
+# ✅ CORREGIDO: partition_key_path en singular (no partition_keys)
 variable "containers" {
   description = "Lista de containers a crear"
   type = list(object({
-    name           = string
-    partition_keys = list(string)
-    throughput     = optional(number, null) # null para serverless
-    default_ttl    = optional(number, -1)   # -1 = sin TTL
+    name               = string
+    partition_key_path = string # ✅ Singular
+    throughput         = optional(number, null)
   }))
   default = []
 }
@@ -89,19 +89,19 @@ variable "tags" {
 # ============================================
 
 variable "public_network_access_enabled" {
-  description = "Habilitar acceso público a Cosmos DB"
+  description = "Habilitar acceso público"
   type        = bool
   default     = true
 }
 
 variable "ip_range_filter" {
-  description = "Lista de rangos IP permitidos (CIDR o IPs individuales). Ejemplo: ['10.0.0.0/24', '20.30.40.50']"
+  description = "Lista de rangos IP permitidos"
   type        = list(string)
   default     = []
 }
 
 variable "virtual_network_rules" {
-  description = "Reglas de Virtual Network para acceso a Cosmos DB"
+  description = "Reglas de VNet"
   type = list(object({
     subnet_id               = string
     ignore_missing_endpoint = optional(bool, false)
@@ -110,13 +110,13 @@ variable "virtual_network_rules" {
 }
 
 variable "enable_private_endpoint" {
-  description = "Habilitar Private Endpoint para Cosmos DB"
+  description = "Habilitar Private Endpoint"
   type        = bool
   default     = false
 }
 
 variable "private_endpoint_subnet_id" {
-  description = "Subnet ID para Private Endpoint (requerido si enable_private_endpoint = true)"
+  description = "Subnet ID para Private Endpoint"
   type        = string
   default     = null
 }
