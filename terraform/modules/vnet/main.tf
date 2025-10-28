@@ -1,15 +1,33 @@
 # ============================================
-# VNet Module - Main
+# VNet Module - Main (VERSIÓN CORRECTA Y COMPLETA)
+# ============================================
+# 
+# Este módulo soporta:
+# - Crear una nueva VNet (create_vnet = true)
+# - Usar una VNet existente (create_vnet = false)
+# - Crear subnets en VNet nueva o existente
+# - Delegación dinámica para servicios (Functions, App Services, etc.)
+# - Service Endpoints configurables
+# - Private Endpoint Policies
 # ============================================
 
-# Data source para VNet existente (si create_vnet = false)
+# ============================================
+# Data Source: VNet Existente
+# ============================================
+# Se usa cuando create_vnet = false
+# Permite crear subnets en una VNet que ya existe
+
 data "azurerm_virtual_network" "existing" {
   count               = var.create_vnet ? 0 : 1
   name                = var.vnet_name
   resource_group_name = var.resource_group_name
 }
 
-# Nueva VNet (si create_vnet = true)
+# ============================================
+# Resource: Nueva VNet
+# ============================================
+# Se crea cuando create_vnet = true
+
 resource "azurerm_virtual_network" "vnet" {
   count               = var.create_vnet ? 1 : 0
   name                = var.vnet_name
@@ -25,7 +43,15 @@ resource "azurerm_virtual_network" "vnet" {
   }
 }
 
-# Subnets (en VNet nueva o existente)
+# ============================================
+# Resource: Subnets
+# ============================================
+# Se crean subnets en la VNet (nueva o existente)
+# Soporta configuración dinámica de:
+# - Service Endpoints
+# - Delegación a servicios Azure
+# - Private Endpoint Policies
+
 resource "azurerm_subnet" "subnets" {
   for_each = var.subnets
 
@@ -34,14 +60,18 @@ resource "azurerm_subnet" "subnets" {
   virtual_network_name = var.create_vnet ? azurerm_virtual_network.vnet[0].name : data.azurerm_virtual_network.existing[0].name
   address_prefixes     = each.value.address_prefixes
 
-  # Service Endpoints
+  # Service Endpoints (opcional)
+  # Ejemplos: Microsoft.Storage, Microsoft.KeyVault, Microsoft.Sql
   service_endpoints = length(each.value.service_endpoints) > 0 ? each.value.service_endpoints : null
 
   # Private Endpoint Policies
-  #private_endpoint_network_policies_enabled     = each.value.private_endpoint_network_policies_enabled
+  # Nota: private_endpoint_network_policies_enabled está deprecated en algunas versiones
+  # private_endpoint_network_policies_enabled     = each.value.private_endpoint_network_policies_enabled
   private_link_service_network_policies_enabled = each.value.private_link_service_network_policies_enabled
 
-  # Delegación (para Azure Functions, App Services, etc.)
+  # Delegación Dinámica
+  # Permite delegar la subnet a servicios específicos de Azure
+  # Ejemplo: Microsoft.Web/serverFarms para Functions
   dynamic "delegation" {
     for_each = each.value.delegation != null ? [each.value.delegation] : []
     content {
@@ -54,6 +84,8 @@ resource "azurerm_subnet" "subnets" {
     }
   }
 
+  # Dependencias
+  # Asegura que la VNet exista antes de crear subnets
   depends_on = [
     azurerm_virtual_network.vnet,
     data.azurerm_virtual_network.existing

@@ -13,117 +13,10 @@ output "resource_group_location" {
   value       = var.resource_group.create ? module.resource_group[0].location : var.location
 }
 
-# output "storage_accounts" {
-#   description = "Información de los Storage Accounts independientes creados"
-#   value = length(var.storage_accounts) > 0 ? {
-#     for key, sa in module.storage_account : key => {
-#       id                    = sa.id
-#       name                  = sa.name
-#       type                  = var.storage_accounts[key].storage_type
-#       primary_blob_endpoint = sa.primary_blob_endpoint
-#       primary_web_endpoint  = sa.primary_web_endpoint
-#     }
-#   } : {}
-# }
-
-# output "service_bus" {
-#   description = "Información del Service Bus"
-#   value = var.service_bus.create ? {
-#     namespace_id   = module.service_bus[0].namespace_id
-#     namespace_name = module.service_bus[0].namespace_name
-#     queues         = module.service_bus[0].queues
-#     topics         = module.service_bus[0].topics
-#   } : null
-# }
-
-# output "functions_linux" {
-#   description = "Información de Azure Functions Linux"
-#   value = length(var.functions_linux) > 0 ? {
-#     function_apps         = module.functions_linux[0].function_apps
-#     storage_accounts      = module.functions_linux[0].storage_accounts
-#   } : null
-# }
-
 output "workspace_id" {
   description = "ID del Log Analytics Workspace compartido"
   value       = var.application_insights.create_workspace ? azurerm_log_analytics_workspace.shared[0].id : null
 }
-
-# output "cosmos_db" {
-#   description = "Información de Cosmos DB"
-#   value = var.cosmos_db.create ? {
-#     account_id    = module.cosmos_db[0].account_id
-#     account_name  = module.cosmos_db[0].account_name
-#     endpoint      = module.cosmos_db[0].endpoint
-#     database_name = module.cosmos_db[0].database_name
-#     containers    = module.cosmos_db[0].containers
-#   } : null
-#   sensitive = true
-# }
-
-
-# output "key_vault" {
-#   description = "Información del Key Vault"
-#   value = var.key_vault.create ? {
-#     id        = module.key_vault[0].id
-#     name      = module.key_vault[0].name
-#     vault_uri = module.key_vault[0].vault_uri
-#   } : null
-# }
-
-
-# output "api_management" {
-#   description = "Información de API Management"
-#   value = var.api_management.create ? {
-#     id                   = module.api_management[0].id
-#     name                 = module.api_management[0].name
-#     gateway_url          = module.api_management[0].gateway_url
-#     developer_portal_url = module.api_management[0].developer_portal_url
-#   } : null
-# }
-
-# output "signalr" {
-#   description = "Información de SignalR Service"
-#   value = var.signalr.create ? {
-#     id       = module.signalr[0].id
-#     name     = module.signalr[0].name
-#     hostname = module.signalr[0].hostname
-#   } : null
-# }
-
-# # ============================================
-# # VNET OUTPUTS
-# # ============================================
-
-# output "vnet_id" {
-#   description = "ID de la Virtual Network"
-#   value       = module.vnet.vnet_id
-# }
-
-# output "vnet_name" {
-#   description = "Nombre de la Virtual Network"
-#   value       = module.vnet.vnet_name
-# }
-
-# output "vnet_address_space" {
-#   description = "Espacio de direcciones de la VNet"
-#   value       = module.vnet.vnet_address_space
-# }
-
-# output "subnet_ids" {
-#   description = "IDs de las subnets"
-#   value       = module.vnet.subnet_ids
-# }
-
-# output "subnet_names" {
-#   description = "Nombres de las subnets"
-#   value       = module.vnet.subnet_names
-# }
-
-# output "network_configuration" {
-#   description = "Configuración completa de la red"
-#   value       = module.vnet.network_configuration
-# }
 
 
 # ============================================
@@ -210,20 +103,6 @@ output "functions_linux" {
     storage_accounts = module.functions_linux[0].storage_accounts
   } : null
 }
-
-# # ============================================
-# # Function Linux - SINGLE
-# # ============================================
-
-# output "function_linux_critical" {
-#   description = "Información de Function Linux crítica (Single)"
-#   value = var.function_linux_critical.create ? {
-#     id               = module.function_linux_critical.id
-#     name             = module.function_linux_critical.name
-#     default_hostname = module.function_linux_critical.default_hostname
-#     principal_id     = module.function_linux_critical.principal_id
-#   } : null
-# }
 
 # ============================================
 # Functions Windows

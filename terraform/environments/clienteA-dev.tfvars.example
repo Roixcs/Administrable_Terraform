@@ -4,12 +4,36 @@
 # ============================================
 
 # ============================================
+# NOTAS DE USO
+# ============================================
+
+# Para DESHABILITAR un servicio, usar:
+# service_name = { create = false, ... campos requeridos con valores dummy ... }
+
+# Ejemplo para deshabilitar VNet:
+# vnet = {
+#   create_vnet   = false
+#   vnet_name     = ""
+#   address_space = []
+#   subnets       = {}
+# }
+
+# Para AGREGAR más Functions, solo agregar al array:
+# functions_linux = [
+#   { ... función 1 ... },
+#   { ... función 2 ... },
+#   { ... función 3 ... },  # Nueva
+# ]
+
+
+# ============================================
 # GLOBAL CONFIGURATION
 # ============================================
 
-project_name = "testclient"
+project_name = "testterraform"
 environment  = "dev"
 location     = "East US"
+
 
 # ============================================
 # AZURE AUTHENTICATION
@@ -24,12 +48,11 @@ client_secret   = "your-client-secret-here"
 # ============================================
 # TAGS
 # ============================================
-
 tags = {
-  Project     = "TestClient"
+  Project     = "TestTerraform"
   Environment = "Development"
   ManagedBy   = "Terraform"
-  Owner       = "DevOps Team"
+  Owner       = "SRE Team"
 }
 
 # ============================================
@@ -44,23 +67,71 @@ resource_group = {
 
 # ============================================
 # STORAGE ACCOUNTS (INDEPENDIENTES)
+# ✅ CORRECCIÓN: Usar list(object) en lugar de map(object)
 # ============================================
-# Storage para Static Website y datos generales
 
-storage_accounts = {
-  website = {
-    name                     = "sttestclientdevweb"
-    storage_type             = "static_website"
-    account_tier             = "Standard"
-    account_replication_type = "LRS"
+storage_accounts = [
+  # Storage Account para Static Website
+  {
+    name                      = "sttestclientdevweb"
+    storage_type              = "static_website"
+    account_tier              = "Standard"
+    account_replication_type  = "LRS"
+    access_tier               = "Hot"
+    enable_https_traffic_only = true
+    min_tls_version           = "TLS1_2"
+    
+    # Static Website Config
+    index_document     = "index.html"
+    error_404_document = "404.html"
+    
+    # Containers (opcional)
+    containers = []
+    
+    # Lifecycle Management (opcional)
+    lifecycle_rules = []
+  },
+  
+  # Storage Account General Purpose
+  {
+    name                      = "sttestclientdevdata"
+    storage_type              = "general"
+    account_tier              = "Standard"
+    account_replication_type  = "LRS"
+    access_tier               = "Hot"
+    enable_https_traffic_only = true
+    min_tls_version           = "TLS1_2"
+    
+    # Static Website Config (no aplica para general)
+    index_document     = "index.html"
+    error_404_document = "404.html"
+    
+    # Containers
+    containers = [
+      {
+        name        = "data"
+        access_type = "private"
+      },
+      {
+        name        = "backups"
+        access_type = "private"
+      }
+    ]
+    
+    # Lifecycle Management
+    lifecycle_rules = [
+      {
+        name                       = "move-old-to-cool"
+        enabled                    = true
+        prefix_match               = ["backups/"]
+        blob_types                 = ["blockBlob"]
+        tier_to_cool_after_days    = 30
+        tier_to_archive_after_days = 90
+        delete_after_days          = 365
+      }
+    ]
   }
-  data = {
-    name                     = "sttestclientdevdata"
-    storage_type             = "general"
-    account_tier             = "Standard"
-    account_replication_type = "LRS"
-  }
-}
+]
 
 # ============================================
 # SERVICE BUS
@@ -74,32 +145,40 @@ service_bus = {
   queues = [
     {
       name                                        = "orders-queue"
-      max_size_in_megabytes                      = 1024
-      enable_dead_lettering_on_message_expiration = true
-      max_delivery_count                         = 10
+      enabled                                     = true
+      max_size_in_megabytes                       = 1024
       duplicate_detection_history_time_window    = "PT10M"
+      enable_batched_operations                   = true
     },
     {
       name                                        = "notifications-queue"
-      max_size_in_megabytes                      = 2048
-      enable_dead_lettering_on_message_expiration = true
-      max_delivery_count                         = 5
+      enabled                                     = true
+      max_size_in_megabytes                       = 1024
+      duplicate_detection_history_time_window    = "PT10M"
+      enable_batched_operations                   = true
     }
   ]
   
   topics = [
     {
-      name                  = "events-topic"
-      max_size_in_megabytes = 1024
+      name                                        = "events-topic"
+      enabled                                     = true
+      max_size_in_megabytes                       = 1024
+      duplicate_detection_history_time_window    = "PT10M"
+      enable_batched_operations                   = true
+      
       subscriptions = [
         {
-          name                                        = "processor-sub"
+          name                                        = "sub-analytics"
+          enabled                                     = true
           max_delivery_count                          = 10
           enable_dead_lettering_on_message_expiration = true
         },
         {
-          name               = "analytics-sub"
-          max_delivery_count = 15
+          name                                        = "sub-monitoring"
+          enabled                                     = true
+          max_delivery_count                          = 10
+          enable_dead_lettering_on_message_expiration = true
         }
       ]
     }
@@ -111,30 +190,30 @@ service_bus = {
 # ============================================
 
 cosmos_db = {
-  create            = true
-  account_name      = "cosmos-testclient-dev"
-  database_name     = "testclient-db"
-  enable_serverless = true
-  consistency_level = "Session"
+  create             = true
+  account_name       = "cosmos-testclient-dev"
+  database_name      = "testclient-db"
+  enable_serverless  = true
+  consistency_level  = "Session"
   
+  # Network Configuration
+  public_network_access_enabled = true
+  ip_range_filter               = []
+  virtual_network_rules         = []
+  enable_private_endpoint       = false
+  private_endpoint_subnet_id    = null
+  
+  # Containers
   containers = [
     {
-      name           = "orders"
-      partition_keys = ["/customerId"]
-      throughput     = null
-      default_ttl    = -1
+      name               = "users"
+      partition_key_path = "/userId"
+      throughput         = null # Serverless no requiere throughput
     },
     {
-      name           = "customers"
-      partition_keys = ["/id"]
-      throughput     = null
-      default_ttl    = 86400  # 24 horas
-    },
-    {
-      name           = "products"
-      partition_keys = ["/category"]
-      throughput     = null
-      default_ttl    = -1
+      name               = "orders"
+      partition_key_path = "/orderId"
+      throughput         = null
     }
   ]
 }
@@ -150,6 +229,31 @@ key_vault = {
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
   enable_rbac_authorization  = true
+  
+  # Permisos para servicios Azure
+  enabled_for_deployment          = false
+  enabled_for_disk_encryption     = false
+  enabled_for_template_deployment = false
+  
+  # Network ACLs
+  network_acls = {
+    default_action             = "Allow"
+    bypass                     = "AzureServices"
+    ip_rules                   = []
+    virtual_network_subnet_ids = []
+  }
+  
+  # Secretos (opcional)
+  secrets = [
+    {
+      name  = "ConnectionString-ServiceBus"
+      value = "PLACEHOLDER"
+    },
+    {
+      name  = "ConnectionString-CosmosDB"
+      value = "PLACEHOLDER"
+    }
+  ]
 }
 
 # ============================================
@@ -159,9 +263,14 @@ key_vault = {
 api_management = {
   create          = true
   name            = "apim-testclient-dev"
-  publisher_name  = "TestClient"
+  publisher_name  = "TestClient Dev Team"
   publisher_email = "devops@testclient.com"
-  sku_name        = "Consumption_0"
+  sku_name        = "Developer_1"
+  
+  # VNet Configuration (opcional)
+  virtual_network_type          = "None"
+  virtual_network_configuration = null
+  public_ip_address_id          = null
 }
 
 # ============================================
@@ -169,22 +278,26 @@ api_management = {
 # ============================================
 
 signalr = {
-  create       = true
-  name         = "signalr-testclient-dev"
-  sku          = "Free_F1"
-  capacity     = 1
-  service_mode = "Default"
+  create                        = true
+  name                          = "signalr-testclient-dev"
+  sku                           = "Free_F1"
+  capacity                      = 1
+  service_mode                  = "Default"
+  cors_allowed_origins          = ["*"]
+  public_network_access_enabled = true
 }
 
 # ============================================
 # VIRTUAL NETWORK
+# ✅ CORRECCIÓN: Usar create_vnet y vnet_name (no create y name)
 # ============================================
 
 vnet = {
-  create        = true
-  name          = "vnet-testclient-dev"
-  address_space = ["10.0.0.0/16"]
-  dns_servers   = []
+  create_vnet         = true    # ✅ Nombre correcto
+  vnet_name           = "vnet-testclient-dev"  # ✅ Nombre correcto
+  resource_group_name = null    # Usar el RG principal
+  address_space       = ["10.0.0.0/16"]
+  dns_servers         = []
   
   subnets = {
     # Subnet general
@@ -192,6 +305,9 @@ vnet = {
       name             = "subnet-general"
       address_prefixes = ["10.0.1.0/24"]
       service_endpoints = []
+      delegation        = null
+      private_endpoint_network_policies_enabled     = true
+      private_link_service_network_policies_enabled = true
     }
     
     # Subnet para Functions con delegación
@@ -211,6 +327,7 @@ vnet = {
           ]
         }
       }
+      private_endpoint_network_policies_enabled     = true
       private_link_service_network_policies_enabled = false
     }
     
@@ -219,6 +336,8 @@ vnet = {
       name             = "subnet-private-endpoints"
       address_prefixes = ["10.0.3.0/24"]
       service_endpoints = []
+      delegation        = null
+      private_endpoint_network_policies_enabled     = true
       private_link_service_network_policies_enabled = false
     }
   }
@@ -233,6 +352,33 @@ functions_linux = [
     name    = "fn-testclient-api-dev"
     runtime = "dotnet-isolated"
     version = "8.0"
+    
+    app_settings = [
+      {
+        name         = "ENVIRONMENT"
+        value        = "Development"
+        slot_setting = false
+      },
+      {
+        name         = "ServiceBusConnection__fullyQualifiedNamespace"
+        value        = "sb-testclient-dev.servicebus.windows.net"
+        slot_setting = false
+      },
+      {
+        name         = "CosmosDbConnection__accountEndpoint"
+        value        = "https://cosmos-testclient-dev.documents.azure.com:443/"
+        slot_setting = false
+      }
+    ]
+    
+    instance_memory_mb     = 2048
+    maximum_instance_count = 100
+  },
+  {
+    name    = "fn-testclient-worker-dev"
+    runtime = "dotnet-isolated"
+    version = "8.0"
+    
     app_settings = [
       {
         name         = "ENVIRONMENT"
@@ -245,20 +391,7 @@ functions_linux = [
         slot_setting = false
       }
     ]
-    instance_memory_mb     = 2048
-    maximum_instance_count = 100
-  },
-  {
-    name    = "fn-testclient-worker-dev"
-    runtime = "dotnet-isolated"
-    version = "8.0"
-    app_settings = [
-      {
-        name         = "ENVIRONMENT"
-        value        = "Development"
-        slot_setting = false
-      }
-    ]
+    
     instance_memory_mb     = 2048
     maximum_instance_count = 50
   }
@@ -270,28 +403,30 @@ functions_linux = [
 
 functions_windows = [
   {
-    name                         = "fn-testclient-processor-dev"
-    plan_type                    = "consumption"
-    create                       = true
-    always_on                    = false
-    dotnet_version               = "v8.0"
-    use_dotnet_isolated_runtime  = true
-    application_insights_enabled = true
+    name      = "fn-testclient-processor-dev"
+    plan_type = "consumption"
+    create    = true
+    plan_name = null
     
     app_settings = [
       {
         name         = "ENVIRONMENT"
         value        = "Development"
         slot_setting = false
-      },
-      {
-        name         = "CosmosDbEndpoint"
-        value        = "https://cosmos-testclient-dev.documents.azure.com:443/"
-        slot_setting = false
       }
     ]
     
-    identity_type = "SystemAssigned"
+    always_on                   = false
+    dotnet_version              = "v8.0"
+    use_dotnet_isolated_runtime = true
+    
+    vnet_integration             = null
+    identity_type                = "SystemAssigned"
+    identity_ids                 = []
+    application_insights_enabled = true
+    
+    storage_account_name          = null
+    storage_uses_managed_identity = false
   }
 ]
 
@@ -306,146 +441,122 @@ front_door = {
   response_timeout_seconds = 120
   
   # Endpoints
-  endpoints = {
-    web = {
-      name    = "web-endpoint"
-      enabled = true
+  endpoints = [
+    {
+      name = "testclient-dev"
     }
-  }
+  ]
   
   # Origin Groups
-  origin_groups = {
-    static_website = {
-      name                     = "static-website-og"
-      session_affinity_enabled = false
+  origin_groups = [
+    {
+      name = "storage-web-group"
       
       load_balancing = {
+        sample_size                 = 4
+        successful_samples_required = 3
         additional_latency_in_milliseconds = 50
-        sample_size                        = 4
-        successful_samples_required        = 3
       }
       
       health_probe = {
-        interval_in_seconds = 30
+        interval_in_seconds = 100
         path                = "/"
         protocol            = "Https"
         request_type        = "HEAD"
       }
     }
-  }
+  ]
   
   # Origins
-  origins = {
-    storage_web = {
-      name                           = "storage-website-origin"
-      origin_group_key               = "static_website"
-      host_name                      = "sttestclientdevweb.z13.web.core.windows.net"  # Ajustar según región
-      http_port                      = 80
-      https_port                     = 443
-      certificate_name_check_enabled = true
-      enabled                        = true
-      priority                       = 1
-      weight                         = 1000
-    }
-  }
-  
-  # Rule Sets
-  rule_sets = {
-    security_rules = {
-      name = "SecurityRules"
-    }
-  }
-  
-  # Rules
-  rules = {
-    # Regla 1: Rewrite root a index.html
-    rewrite_to_index = {
-      name              = "RewriteToIndex"
-      rule_set_key      = "security_rules"
-      order             = 1
-      behavior_on_match = "Continue"
+  origins = [
+    {
+      name              = "storage-web"
+      origin_group_name = "storage-web-group"
+      enabled           = true
       
-      conditions = {
-        url_path = {
-          operator     = "Equal"
-          match_values = ["/"]
-        }
-      }
+      # IMPORTANTE: Ajustar según región
+      # East US: .z13.web.core.windows.net
+      # East US 2: .z20.web.core.windows.net
+      # West US: .z22.web.core.windows.net
+      host_name = "sttestclientdevweb.z13.web.core.windows.net"
       
-      actions = {
-        url_rewrite = {
-          source_pattern          = "/"
-          destination             = "/index.html"
-          preserve_unmatched_path = false
-        }
-      }
+      http_port  = 80
+      https_port = 443
+      priority   = 1
+      weight     = 1000
     }
-    
-    # Regla 2: Security Headers
-    security_headers = {
-      name              = "SecurityHeaders"
-      rule_set_key      = "security_rules"
-      order             = 2
-      behavior_on_match = "Continue"
-      
-      actions = {
-        response_headers = {
-          "X-Content-Type-Options" = {
-            action = "Overwrite"
-            value  = "nosniff"
-          }
-          "Strict-Transport-Security" = {
-            action = "Overwrite"
-            value  = "max-age=31536000; includeSubDomains"
-          }
-          "Content-Security-Policy" = {
-            action = "Overwrite"
-            value  = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
-          }
-          "X-Frame-Options" = {
-            action = "Overwrite"
-            value  = "DENY"
-          }
-          "Referrer-Policy" = {
-            action = "Overwrite"
-            value  = "strict-origin-when-cross-origin"
-          }
-        }
-      }
-    }
-  }
+  ]
   
   # Routes
-  routes = {
-    default_route = {
-      name                   = "default-route"
-      endpoint_key           = "web"
-      origin_group_key       = "static_website"
-      origin_keys            = ["storage_web"]
-      patterns_to_match      = ["/*"]
-      supported_protocols    = ["Http", "Https"]
+  routes = [
+    {
+      name              = "default-route"
+      endpoint_name     = "testclient-dev"
+      origin_group_name = "storage-web-group"
+      enabled           = true
+      
       forwarding_protocol    = "HttpsOnly"
       https_redirect_enabled = true
-      enabled                = true
+      patterns_to_match      = ["/*"]
+      supported_protocols    = ["Http", "Https"]
+      
       link_to_default_domain = true
-      rule_set_keys          = ["security_rules"]
-      
-      cache = {
-        query_string_caching_behavior = "IgnoreQueryString"
-        compression_enabled           = true
-        content_types_to_compress     = [
-          "text/html",
-          "text/css",
-          "text/javascript",
-          "application/javascript",
-          "application/json",
-          "application/xml"
-        ]
-      }
-      
-      custom_domains = []
+      custom_domains         = []
     }
-  }
+  ]
   
-  custom_domains = {}
+  # Custom Domains (opcional)
+  custom_domains = []
+  
+  # Rule Sets
+  rule_sets = [
+    {
+      name = "security-rules"
+    }
+  ]
+  
+  # Rules
+  rules = [
+    {
+      name          = "redirect-to-index"
+      rule_set_name = "security-rules"
+      order         = 1
+      
+      conditions = [
+        {
+          condition_type = "url_file_extension_condition"
+          operator       = "Equal"
+          match_values   = []
+          transforms     = []
+        }
+      ]
+      
+      actions = [
+        {
+          action_type = "url_rewrite_action"
+          source_pattern = "/"
+          destination    = "/index.html"
+        },
+        {
+          action_type = "response_header_action"
+          header_action = "Append"
+          header_name   = "X-Content-Type-Options"
+          header_value  = "nosniff"
+        },
+        {
+          action_type = "response_header_action"
+          header_action = "Append"
+          header_name   = "Strict-Transport-Security"
+          header_value  = "max-age=31536000; includeSubDomains"
+        },
+        {
+          action_type = "response_header_action"
+          header_action = "Append"
+          header_name   = "Content-Security-Policy"
+          header_value  = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+        }
+      ]
+    }
+  ]
 }
+
