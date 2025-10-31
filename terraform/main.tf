@@ -14,7 +14,6 @@ locals {
   rg_name = var.resource_group.create ? module.resource_group[0].name : var.resource_group.name
   rg_id   = var.resource_group.create ? module.resource_group[0].id : "/subscriptions/${var.subscription_id}/resourceGroups/${var.resource_group.name}"
 
-
   # Tags comunes
   common_tags = merge(
     var.tags,
@@ -338,27 +337,28 @@ module "resource_group" {
 # Application Insights Workspace
 # ============================================
 
-resource "azurerm_log_analytics_workspace" "shared" {
-  count               = var.application_insights.create_workspace ? 1 : 0
-  name                = coalesce(var.application_insights.workspace_name, "${local.name_prefix}-law")
-  location            = var.location
-  resource_group_name = local.rg_name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
+# resource "azurerm_log_analytics_workspace" "shared" {
+#   count               = var.application_insights.create_workspace ? 1 : 0
+#   name                = coalesce(var.application_insights.workspace_name, "${local.name_prefix}-law")
+#   location            = var.location
+#   resource_group_name = local.rg_name
+#   sku                 = "PerGB2018"
+#   retention_in_days   = 30
 
-  tags = local.common_tags
+#   tags = local.common_tags
 
-  depends_on = [module.resource_group]
-}
+#   depends_on = [module.resource_group]
+# }
+
 
 # ============================================
-# LOG ANALYTICS WORKSPACE MODULE
+# Log Analytics Workspace (OPCIONAL - solo si quieres custom)
 # ============================================
-
 module "log_analytics" {
   count  = var.log_analytics.create ? 1 : 0
   source = "./modules/log_analytics_workspace"
 
+  create_log_analytics               = true
   name                               = var.log_analytics.name
   resource_group_name                = local.rg_name
   location                           = var.location
@@ -372,6 +372,7 @@ module "log_analytics" {
 
   depends_on = [module.resource_group]
 }
+
 
 # ============================================
 # Storage Accounts (INDEPENDIENTES)
@@ -516,6 +517,7 @@ module "signalr" {
 # ============================================
 
 module "vnet" {
+  count  = var.vnet.create_vnet || length(var.vnet.subnets) > 0 ? 1 : 0
   source = "./modules/vnet"
 
   create_vnet         = var.vnet.create_vnet
@@ -543,12 +545,12 @@ module "functions_linux" {
   resource_group_name = local.rg_name
   resource_group_id   = local.rg_id
   location            = var.location
-  workspace_id        = var.application_insights.create_workspace ? azurerm_log_analytics_workspace.shared[0].id : null
+  workspace_id        = var.log_analytics.create ? module.log_analytics[0].id : null # ✅ null = Azure usa default
   tags                = local.common_tags
 
   depends_on = [
     module.resource_group,
-    azurerm_log_analytics_workspace.shared
+    module.log_analytics
   ]
 }
 
@@ -563,12 +565,13 @@ module "functions_windows" {
   functions           = var.functions_windows
   resource_group_name = local.rg_name
   location            = var.location
-  workspace_id        = var.application_insights.create_workspace ? azurerm_log_analytics_workspace.shared[0].id : null
-  tags                = local.common_tags
+  //workspace_id        = var.application_insights.create_workspace ? azurerm_log_analytics_workspace.shared[0].id : null
+  workspace_id = var.log_analytics.create ? module.log_analytics[0].id : null # ✅ null = Azure usa default
+  tags         = local.common_tags
 
   depends_on = [
     module.resource_group,
-    azurerm_log_analytics_workspace.shared
+    module.log_analytics
   ]
 }
 

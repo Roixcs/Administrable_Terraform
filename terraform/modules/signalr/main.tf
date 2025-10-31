@@ -8,7 +8,7 @@ resource "azurerm_signalr_service" "this" {
   resource_group_name = var.resource_group_name
 
   sku {
-    name     = split("_", var.sku)[0] # Free, Standard, Premium
+    name     = var.sku # Free, Standard, Premium
     capacity = var.capacity
   }
 

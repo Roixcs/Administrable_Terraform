@@ -67,11 +67,10 @@ variable "resource_group_name" {
 }
 
 variable "workspace_id" {
-  description = "ID del Log Analytics Workspace (opcional)"
+  description = "ID del Log Analytics Workspace (opcional - si es null, Azure usa DefaultWorkspace automáticamente)"
   type        = string
   default     = null
 }
-
 variable "tags" {
   description = "Tags para los recursos"
   type        = map(string)

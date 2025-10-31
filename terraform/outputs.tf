@@ -274,7 +274,6 @@
 # }
 
 
-
 # ============================================
 # ROOT - Outputs
 # ============================================
@@ -286,8 +285,8 @@
 output "resource_group" {
   description = "Información del Resource Group"
   value = var.resource_group.create ? {
-    id       = module.resource_group[0].resource_group_id
-    name     = module.resource_group[0].resource_group_name
+    id       = module.resource_group[0].id
+    name     = module.resource_group[0].name
     location = module.resource_group[0].location
   } : null
 }
@@ -296,19 +295,19 @@ output "resource_group" {
 # Application Insights & Log Analytics
 # ============================================
 
-output "application_insights_workspace" {
-  description = "Workspace de Application Insights"
-  value = var.application_insights.create_workspace ? {
-    id                   = azurerm_log_analytics_workspace.shared[0].id
-    workspace_id         = azurerm_log_analytics_workspace.shared[0].workspace_id
-    primary_shared_key   = azurerm_log_analytics_workspace.shared[0].primary_shared_key
-    secondary_shared_key = azurerm_log_analytics_workspace.shared[0].secondary_shared_key
-  } : null
-  sensitive = true
-}
+# output "application_insights_workspace" {
+#   description = "Workspace de Application Insights"
+#   value = var.application_insights.create_workspace ? {
+#     id                   = azurerm_log_analytics_workspace.shared[0].id
+#     workspace_id         = azurerm_log_analytics_workspace.shared[0].workspace_id
+#     primary_shared_key   = azurerm_log_analytics_workspace.shared[0].primary_shared_key
+#     secondary_shared_key = azurerm_log_analytics_workspace.shared[0].secondary_shared_key
+#   } : null
+#   sensitive = true
+# }
 
 output "log_analytics" {
-  description = "Log Analytics Workspace"
+  description = "Log Analytics Workspace (solo si se creó uno custom)"
   value = var.log_analytics.create ? {
     id           = module.log_analytics[0].id
     workspace_id = module.log_analytics[0].workspace_id
@@ -316,7 +315,6 @@ output "log_analytics" {
   } : null
   sensitive = true
 }
-
 # ============================================
 # Storage Accounts
 # ============================================
@@ -379,6 +377,7 @@ output "key_vault" {
     tenant_id       = module.key_vault[0].tenant_id
     secrets_created = module.key_vault[0].secrets_created
   } : null
+  sensitive = true
 }
 
 # ============================================
@@ -437,12 +436,12 @@ output "vnet_address_space" {
 
 output "subnet_ids" {
   description = "IDs de las subnets"
-  value       = module.vnet.subnet_ids
+  value       = length(module.vnet) > 0 ? module.vnet[0].subnet_ids : {}  # ✅ Cambiar
 }
 
 output "subnet_names" {
   description = "Nombres de las subnets"
-  value       = module.vnet.subnet_names
+  value       = length(module.vnet) > 0 ? module.vnet[0].subnet_names : {}
 }
 
 output "network_configuration" {

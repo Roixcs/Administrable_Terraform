@@ -9,14 +9,16 @@ output "function_apps" {
     for name, func in azapi_resource.function_app : name => {
       id               = func.id
       name             = func.name
-      enabled          = jsondecode(func.output).properties.enabled
-      default_hostname = jsondecode(func.output).properties.defaultHostName
-      principal_id     = jsondecode(func.output).identity.principalId
-      state            = jsondecode(func.output).properties.state
+      # enabled y state pueden no existir o estar en otra ubicación
+      # Mejor usar solo lo que sabemos que existe:
+      location         = func.output.location
+      kind             = try(func.output.kind, null)
+      principal_id     = try(func.output.identity.principalId, null)
+      # O simplemente devolver todo:
+      # properties       = func.output
     }
   }
 }
-
 output "storage_accounts" {
   description = "Storage Accounts creados para las Functions"
   value = {

@@ -17,8 +17,22 @@
 # Se usa cuando create_vnet = false
 # Permite crear subnets en una VNet que ya existe
 
+# data "azurerm_virtual_network" "existing" {
+#   count               = var.create_vnet ? 0 : 1
+#   name                = var.vnet_name
+#   resource_group_name = var.resource_group_name
+# }
+
+# Solo buscar VNet existente si NO se crea Y hay subnets para crear
+# data "azurerm_virtual_network" "existing" {
+#   count               = !var.create_vnet && length(var.subnets) > 0 ? 1 : 0  # ✅
+#   name                = var.vnet_name
+#   resource_group_name = var.resource_group_name
+# }
+
+# Solo buscar VNet existente si NO se crea Y hay subnets para crear
 data "azurerm_virtual_network" "existing" {
-  count               = var.create_vnet ? 0 : 1
+  count               = !var.create_vnet && length(var.subnets) > 0 ? 1 : 0  # ✅
   name                = var.vnet_name
   resource_group_name = var.resource_group_name
 }

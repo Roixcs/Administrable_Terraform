@@ -683,23 +683,28 @@ variable "resource_group" {
 # Application Insights & Log Analytics
 # ============================================
 
-variable "application_insights" {
-  description = "Configuración de Application Insights Workspace"
-  type = object({
-    create_workspace = bool
-    workspace_name   = optional(string, null)
-  })
-  default = {
-    create_workspace = true
-    workspace_name   = null
-  }
-}
+# variable "application_insights" {
+#   description = "Configuración de Application Insights Workspace"
+#   type = object({
+#     create_workspace = bool
+#     workspace_name   = optional(string, null)
+#   })
+#   default = {
+#     create_workspace = true
+#     workspace_name   = null
+#   }
+# }
+
+# variable "workspace_id" {
+#   description = "ID del workspace existente DefaultWorkspace-{subscription-id}-EUS"
+#   type        = string
+# }
 
 variable "log_analytics" {
-  description = "Configuración de Log Analytics Workspace"
+  description = "Configuración de Log Analytics Workspace (opcional - si no se crea, Azure usa DefaultWorkspace automáticamente)"
   type = object({
-    create                             = bool
-    name                               = string
+    create                             = optional(bool, false) # false = Azure usa DefaultWorkspace
+    name                               = optional(string, "")
     sku                                = optional(string, "PerGB2018")
     retention_in_days                  = optional(number, 30)
     daily_quota_gb                     = optional(number, -1)
@@ -708,11 +713,9 @@ variable "log_analytics" {
     reservation_capacity_in_gb_per_day = optional(number, null)
   })
   default = {
-    create = false
-    name   = ""
+    create = false # Por defecto, dejar que Azure maneje el workspace
   }
 }
-
 # ============================================
 # Storage Accounts (INDEPENDIENTES)
 # ============================================

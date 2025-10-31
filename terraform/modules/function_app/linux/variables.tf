@@ -46,7 +46,7 @@ variable "location" {
 }
 
 variable "workspace_id" {
-  description = "ID del Log Analytics Workspace para Application Insights"
+  description = "ID del Log Analytics Workspace (opcional - si es null, Azure usa DefaultWorkspace automáticamente)"
   type        = string
   default     = null
 }

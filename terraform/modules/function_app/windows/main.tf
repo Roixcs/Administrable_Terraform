@@ -111,11 +111,18 @@ resource "azurerm_windows_function_app" "function" {
     azurerm_storage_account.function[each.key].name
   )
 
-  storage_account_access_key = each.value.storage_account_name != null ? null : (
-    azurerm_storage_account.function[each.key].primary_access_key
-  )
+  # storage_account_access_key = each.value.storage_account_name != null ? null : (
+  #   azurerm_storage_account.function[each.key].primary_access_key
+  # )
 
-  storage_uses_managed_identity = each.value.storage_uses_managed_identity
+  storage_account_access_key = (
+    each.value.storage_uses_managed_identity 
+      ? null 
+      : (each.value.storage_account_name != null 
+          ? null 
+          : azurerm_storage_account.function[each.key].primary_access_key)
+  )
+  #storage_uses_managed_identity = each.value.storage_uses_managed_identity
 
   site_config {
     always_on = each.value.always_on

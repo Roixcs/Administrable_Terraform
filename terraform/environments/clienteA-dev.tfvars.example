@@ -134,6 +134,22 @@ storage_accounts = [
 ]
 
 # ============================================
+# LOG ANALYTICS WORKSPACE
+# ============================================
+# Por defecto (create=false): Azure usa DefaultWorkspace-{sub-id}-{region} automáticamente
+# Solo crear custom si necesitas centralizar o políticas específicas
+
+log_analytics = {
+  create = false  # Azure maneja automáticamente el DefaultWorkspace
+  name   = ""
+}
+
+# Si quieres workspace custom centralizado:
+# log_analytics = {
+#   create = true
+#   name   = "law-central-prod"
+# }
+# ============================================
 # SERVICE BUS
 # ============================================
 

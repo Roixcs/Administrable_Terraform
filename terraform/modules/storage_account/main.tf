@@ -49,7 +49,7 @@ resource "azurerm_storage_container" "this" {
     for sa in var.storage_accounts : {
       for container in sa.containers :
       "${sa.name}/${container.name}" => {
-        storage_account_name  = sa.name
+        storage_account_id    = azurerm_storage_account.this[sa.name].id
         container_name        = container.name
         container_access_type = container.access_type
       }
@@ -57,7 +57,7 @@ resource "azurerm_storage_container" "this" {
   ]...)
 
   name                  = each.value.container_name
-  storage_account_name  = azurerm_storage_account.this[each.value.storage_account_name].name
+  storage_account_id    = each.value.storage_account_id
   container_access_type = each.value.container_access_type
 }
 
