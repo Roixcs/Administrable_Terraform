@@ -11,7 +11,7 @@ output "function_apps" {
       name             = func.name
       # enabled y state pueden no existir o estar en otra ubicación
       # Mejor usar solo lo que sabemos que existe:
-      location         = func.output.location
+      location         = var.location
       kind             = try(func.output.kind, null)
       principal_id     = try(func.output.identity.principalId, null)
       # O simplemente devolver todo:
